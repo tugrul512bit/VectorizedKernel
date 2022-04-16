@@ -3,115 +3,118 @@ Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX SIMD ArchitectÄ
 
 Mandelbrot generation sample:
 
-constexpr float width = 2000;
-constexpr float height = 2000;
 
 ```C++
+#include <vector>
 #include "VectorizedKernel.h"
 int main()
 {
+	constexpr float width = 2000;
+	constexpr float height = 2000;
+
     // buffer for writing pixel values (1 int per pixel)
-		std::vector<int> img(height*width);
+	std::vector<int> img(height*width);
     
-	  constexpr int simd = 16; // good for avx512, not good for avx2/sse4
-	  auto kernel = Vectorization::createKernel<simd>([&](auto & factory, auto & idThread, int * img){
+	constexpr int simd = 16; // good for avx512, not good for avx2/sse4
+	auto kernel = Vectorization::createKernel<simd>([&](auto & factory, auto & idThread, int * img){
 
-        // create a width variable that is 16 threads (not CPU threads) combined
-        auto w = factory.template generate<int>();
-        w.broadcast((int)width);
-        auto j = idThread.modulus(w);
-        auto i = idThread.div(w);
-        const int vecWidth = factory.width;
-
-
-
-        auto x = j.template cast<float>();
-        auto y = i.template cast<float>();
-
-        auto widthDiv2 = factory.template generate<float>();
-        auto widthDiv3 = factory.template generate<float>();
-        auto widthDiv4 = factory.template generate<float>();
-
-        auto heightDiv2 = factory.template generate<float>();
-
-        widthDiv2.broadcast(width/2.0f);
-        widthDiv3.broadcast(width/3.0f);
-        widthDiv4.broadcast(width/4.0f);
-
-        heightDiv2.broadcast(height/2.0f);
-
-        x = x.sub(widthDiv2).sub(widthDiv4).div(widthDiv3);
-        y = heightDiv2.sub(y).div(widthDiv3);
+		// create a width variable that is 16 threads (not CPU threads) combined
+		auto w = factory.template generate<int>();
+		w.broadcast((int)width);
+		auto j = idThread.modulus(w);
+		auto i = idThread.div(w);
+		const int vecWidth = factory.width;
 
 
-        auto imagc = factory.template generate<float>();
-        auto realc = factory.template generate<float>();
 
-        realc.readFrom(x);
-        imagc.readFrom(y);
+		auto x = j.template cast<float>();
+		auto y = i.template cast<float>();
 
-        auto imagz = factory.template generate<float>();
-        auto realz = factory.template generate<float>();
+		auto widthDiv2 = factory.template generate<float>();
+		auto widthDiv3 = factory.template generate<float>();
+		auto widthDiv4 = factory.template generate<float>();
 
-        realz.broadcast(0);
-        imagz.broadcast(0);
+		auto heightDiv2 = factory.template generate<float>();
 
+		widthDiv2.broadcast(width/2.0f);
+		widthDiv3.broadcast(width/3.0f);
+		widthDiv4.broadcast(width/4.0f);
 
-        // loop
-        bool anyTrue = true;
-        auto iteration = factory.template generate<int>();
-        auto iterationLimit = factory.template generate<int>();
-        auto one = factory.template generate<int>();
-        one.broadcast(1);
-        auto zero = factory.template generate<int>();
-        zero.broadcast(0);
-        iteration.broadcast(0);
-        iterationLimit.broadcast(35);
-        auto two = factory.template generate<float>();
-        two.broadcast(2.0f);
-        while(anyTrue)
-        {
+		heightDiv2.broadcast(height/2.0f);
 
-          // computing while loop condition start
-          auto absLessThan2 = realz.mul(realz).add(imagz.mul(imagz)).sqrt().lessThan(two);
-          auto whileLoopCondition = absLessThan2.logicalAnd(iteration.lessThanOrEquals(iterationLimit));
-          anyTrue = whileLoopCondition.isAnyTrue();
-          // computing while loop condition end
+		x = x.sub(widthDiv2).sub(widthDiv4).div(widthDiv3);
+		y = heightDiv2.sub(y).div(widthDiv3);
 
 
-          // do complex multiplication z = z*z + c
-          auto zzReal = realz.mul(realz).sub(imagz.mul(imagz));
-          auto zzImag = realz.mul(imagz).add(imagz.mul(realz));
+		auto imagc = factory.template generate<float>();
+		auto realc = factory.template generate<float>();
 
-          // if a lane has completed work, do not modify it
-          realz = whileLoopCondition.ternary( zzReal.add(realc), realz);
-          imagz = whileLoopCondition.ternary( zzImag.add(imagc), imagz);
+		realc.readFrom(x);
+		imagc.readFrom(y);
+
+		auto imagz = factory.template generate<float>();
+		auto realz = factory.template generate<float>();
+
+		realz.broadcast(0);
+		imagz.broadcast(0);
 
 
-          // increment iteration
-          iteration = iteration.add(whileLoopCondition.ternary(one,zero)); // todo: ternary increment
+		// loop
+		bool anyTrue = true;
+		auto iteration = factory.template generate<int>();
+		auto iterationLimit = factory.template generate<int>();
+		auto one = factory.template generate<int>();
+		one.broadcast(1);
+		auto zero = factory.template generate<int>();
+		zero.broadcast(0);
+		iteration.broadcast(0);
+		iterationLimit.broadcast(35);
+		auto two = factory.template generate<float>();
+		two.broadcast(2.0f);
+		while(anyTrue)
+		{
+
+		  // computing while loop condition start
+		  auto absLessThan2 = realz.mul(realz).add(imagz.mul(imagz)).sqrt().lessThan(two);
+		  auto whileLoopCondition = absLessThan2.logicalAnd(iteration.lessThanOrEquals(iterationLimit));
+		  anyTrue = whileLoopCondition.isAnyTrue();
+		  // computing while loop condition end
 
 
-        }
+		  // do complex multiplication z = z*z + c
+		  auto zzReal = realz.mul(realz).sub(imagz.mul(imagz));
+		  auto zzImag = realz.mul(imagz).add(imagz.mul(realz));
 
-        auto thirtyFour = factory.template generate<int>();
-        thirtyFour.broadcast(34);
+		  // if a lane has completed work, do not modify it
+		  realz = whileLoopCondition.ternary( zzReal.add(realc), realz);
+		  imagz = whileLoopCondition.ternary( zzImag.add(imagc), imagz);
 
-        auto ifLessThanThirtyFour = iteration.lessThan(thirtyFour);
-        auto conditionalValue1Mul = factory.template generate<int>();
-        auto conditionalValue1Div = factory.template generate<int>();
-        conditionalValue1Mul.broadcast(255);
-        conditionalValue1Div.broadcast(33);
-        auto conditionalValue1 = iteration.mul(conditionalValue1Mul).div(conditionalValue1Div);
-        auto conditionalValue2 = factory.template generate<int>();
-        conditionalValue2.broadcast(0);
-        auto returnValue       = ifLessThanThirtyFour.ternary(conditionalValue1, conditionalValue2);
-        auto writeAddr = j.add(i.mul(w));
 
-        returnValue.writeTo(img,writeAddr);
+		  // increment iteration
+		  iteration = iteration.add(whileLoopCondition.ternary(one,zero)); // todo: ternary increment
+
+
+		}
+
+		auto thirtyFour = factory.template generate<int>();
+		thirtyFour.broadcast(34);
+
+		auto ifLessThanThirtyFour = iteration.lessThan(thirtyFour);
+		auto conditionalValue1Mul = factory.template generate<int>();
+		auto conditionalValue1Div = factory.template generate<int>();
+		conditionalValue1Mul.broadcast(255);
+		conditionalValue1Div.broadcast(33);
+		auto conditionalValue1 = iteration.mul(conditionalValue1Mul).div(conditionalValue1Div);
+		auto conditionalValue2 = factory.template generate<int>();
+		conditionalValue2.broadcast(0);
+		auto returnValue       = ifLessThanThirtyFour.ternary(conditionalValue1, conditionalValue2);
+		auto writeAddr = j.add(i.mul(w));
+
+		returnValue.writeTo(img,writeAddr);
 
 	},Vectorization::KernelArgs<int*>{});
 
+	// run width*height threads (not real cpu threads, just simd lanes)
 	kernel.run(width*height,img.data());
   
   // equivalent to (but much faster than) this:

@@ -1,5 +1,5 @@
 # VectorizedKernel
-Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX SIMD Architectıres
+Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX SIMD Architectures.
 
 Mandelbrot generation sample:
 
@@ -150,3 +150,6 @@ int main()
 	return 0;
 }
 ```
+
+With 2.1GHz Fx8150 single thread, it takes less than 1 second 
+to compute 1000x1000 pixels and write to disk in ppm format.

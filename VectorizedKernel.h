@@ -349,6 +349,8 @@ namespace Vectorization
 			return result;
 		}
 
+
+
 		inline const KernelData<Type,Simd> mul(const KernelData<Type,Simd> vec) const noexcept
 		{
 			KernelData<Type,Simd> result;

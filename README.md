@@ -4,10 +4,16 @@ Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX/AVX512 SIMD mic
 How does it work?
 
 - User writes scalar-looking code (see below sample)
-- createKernel factory function is given the user lambda function ```[](auto factory, auto idThread, kernelArgs){}``` and schematics of the kernel parameters ```Vectorization::KernelArgs<int*>{}``` 
+- createKernel factory function is given the user lambda function ```[](auto factory, auto idThread, kernelArgs){}``` and blueprint of the kernel parameters ```Vectorization::KernelArgs<int*>{}``` 
 - Kernel is launched for N times, computed by ```simd```-sized steps (can be bigger than actual SIMD width of CPU for extra pipelining)
 - When N is not integer multiple of simd, the remaining tail is computed with simd=1 automatically
 - User only takes care of the algorithm while each operation is done in parallel in 8,16,32,64,.. steps
+
+What must be given to the lambda function as parameters?
+
+- first parameter: auto factory (this is used for constructing scalar-looking variables that do compute in parallel)
+- second parameter: auto idThread (this is a scalar-looking variable that holds per-work-item id values that are zero-based, up to N given from run method)
+- all others: actual kernel arguments to be used for GPGPU computations (their blueprint is given like this: ```Vectorization::KernelArgs<your_arg_type>{}``` or this: ```Vectorization::KernelArgs<some_arg,some_other_arg>{}``` or anything with more template arguments to declare actual kernel arguments after the second parameter of lambda function )
 
 Mandelbrot generation sample:
 

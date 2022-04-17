@@ -17,9 +17,9 @@ What must be given to the lambda function as parameters?
 
 Mandelbrot generation sample:
 
-- 2.1GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=4 best width): 230 cycles per pixel.
+- 2.1GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=4): 230 cycles per pixel.
 
-- Godbolt.org AVX512 server single thread (simd=64 best width): 55 cycles per pixel (-std=c++2a  -O3 -march=cascadelake -mprefer-vector-width=512 -ftree-vectorize -fno-math-errno )
+- Godbolt.org AVX512 server single thread (simd=64): 55 cycles per pixel (-std=c++2a  -O3 -march=cascadelake -mprefer-vector-width=512 -ftree-vectorize -fno-math-errno )
 
 ```C++
 #include <iostream>

@@ -80,7 +80,7 @@ void createImage()
 	 */
 
 	// single-thread vectorized
-	constexpr int simd = 32;
+	constexpr int simd = 64; // 8 for bulldozer, 16 for avx2 cpu, 64 for avx512
 	auto kernel = Vectorization::createKernel<simd>([&](auto & factory, auto & idThread, int * img){
 
 
@@ -118,27 +118,26 @@ void createImage()
 		const auto four = factory.template generate<float>(4.0f);
 		while(anyTrue)
 		{
+			// an optimization for fma instruction
+			const auto realzClone = factory.template generate<float>(realz);
 
 			// computing while loop condition start
-			const auto absLessThan2 = realz.mul(realz).add(imagz.mul(imagz)).lessThan(4.0f);
+            const auto imagzSquared = imagz.mul(imagz);
+			const auto absLessThan2 = realz.fusedMultiplyAdd(realzClone,imagzSquared).lessThan(4.0f);
 			const auto whileLoopCondition = absLessThan2.logicalAnd(iteration.lessThanOrEquals(35));
 			anyTrue = whileLoopCondition.isAnyTrue();
 			// computing while loop condition end
 
-
 			// do complex multiplication z = z*z + c
-			const auto zzReal = realz.fusedMultiplySub(realz,imagz.mul(imagz));
+			const auto zzReal = realz.fusedMultiplySub(realzClone,imagzSquared);
 			const auto zzImag = realz.fusedMultiplyAdd(imagz,imagz.mul(realz));
 
 			// if a lane has completed work, do not modify it
 			realz = whileLoopCondition.ternary( zzReal.add(realc), realz);
 			imagz = whileLoopCondition.ternary( zzImag.add(imagc), imagz);
 
-
 			// increment iteration
 			iteration = iteration.add(whileLoopCondition.ternary(1,0)); // todo: ternary increment
-
-
 		}
 
 		const auto thirtyFour = factory.template generate<int>(34);
@@ -209,7 +208,6 @@ int getPoint(int a, int b)
 	if (iter < 34) return iter*255/33;
 	else return 0;
 }
-
 
 ```
 

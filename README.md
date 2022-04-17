@@ -3,6 +3,9 @@ Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX/AVX512 SIMD mic
 
 Mandelbrot generation sample:
 
+- 2.1GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=32): 350 cycles per pixel (or 190 ns per pixel) (or ~5 ns per iteration of pixel).
+
+- Godbolt.org AVX512 server (simd=64): 55 cycles per pixel (or ~2 cycles per iteration of pixel) (or ~1 nanoseconds per iteration of pixel). 
 
 ```C++
 #include <iostream>
@@ -27,7 +30,6 @@ int main()
 
 	return 0;
 }
-
 
 
 #include <stdint.h>  // <cstdint> is preferred in C++, but stdint.h works.
@@ -78,14 +80,10 @@ void createImage()
 		auto x0 = j.template cast<float>();
 		auto y0 = i.template cast<float>();
 
-		const auto widthDiv2 = factory.template generate<float>(width/2.0f);
-		const auto widthDiv3 = factory.template generate<float>(width/3.0f);
-		const auto widthDiv4 = factory.template generate<float>(width/4.0f);
-
 		const auto heightDiv2 = factory.template generate<float>(height/2.0f);
 
-		const auto x = x0.sub(widthDiv2).sub(widthDiv4).div(widthDiv3);
-		const auto y = heightDiv2.sub(y0).div(widthDiv3);
+		const auto x = x0.sub(width/2.0f).sub(width/4.0f).div(width/3.0f);
+		const auto y = heightDiv2.sub(y0).div(width/3.0f);
 
 
 		const auto imagc = factory.template generate<float>(y);
@@ -133,10 +131,8 @@ void createImage()
 
 
 		const auto ifLessThanThirtyFour = iteration.lessThan(thirtyFour);
-		const auto conditionalValue1Mul = factory.template generate<int>(255);
-		const auto conditionalValue1Div = factory.template generate<int>(33);
 
-		const auto conditionalValue1 = iteration.mul(conditionalValue1Mul).div(conditionalValue1Div);
+		const auto conditionalValue1 = iteration.mul(255).div(33);
 		const auto conditionalValue2 = factory.template generate<int>(0);
 
 		const auto returnValue       = ifLessThanThirtyFour.ternary(conditionalValue1, conditionalValue2);
@@ -146,11 +142,13 @@ void createImage()
 
 	},Vectorization::KernelArgs<int*>{});
 
-	auto t1 = readTSC();
-	kernel.run(width*height,img.data());
-	auto t2 = readTSC();
-	std::cout<<(t2-t1)/(width*height)<<" cycles per pixel"<<std::endl;
-
+	for(int i=0;i<10;i++)
+	{
+		auto t1 = readTSC();
+		kernel.run(width*height,img.data());
+		auto t2 = readTSC();
+		std::cout<<(t2-t1)/(width*height)<<" cycles per pixel"<<std::endl;
+	}
 	// create string
 	stringstream sstr;
 	sstr << "P3" << endl << width << " " << height << endl << 255 << endl;
@@ -198,8 +196,6 @@ int getPoint(int a, int b)
 	else return 0;
 }
 
+
 ```
 
-With 2.1GHz Fx8150 single thread + 1333MHz DDR3 RAM (single channel), it takes 380 cycles per pixel (or 190 ns per pixel) (or ~5 ns per iteration of pixel)
-
-For AVX512 server of Godbolt.org, it computes each pixel (35 iterations max) in 85 cycles. This means ~2 cycles per iteration per pixel or ~1 ns per iteration per pixel. 1000x1000 image takes ~40 milliseconds, single-thread, with zero explicit intrinsic instructions used.

@@ -62,12 +62,45 @@ namespace Vectorization
 			}
 		}
 
+		// does scatter operation (every element writes its own targeted ptr element, decided by elements of vec)
 		inline void writeTo(Type * const __restrict__ ptr, const KernelData<int,Simd> vec) const noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
 			{
 				ptr[vec.data[i]] = data[i];
+			}
+		}
+
+		// uses only first item of vec to compute the starting point of target ptr element.
+		// writes Simd number of elements to target starting from ptr + vec.data[0]
+		inline void writeToContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> vec) const noexcept
+		{
+			const int idx = vec.data[0];
+			for(int i=0;i<Simd;i++)
+			{
+				ptr[idx+i] = data[i];
+			}
+		}
+
+		// does gather operation (every element reads its own sourced ptr element, decided by elements of vec)
+		inline void readFrom(Type * const __restrict__ ptr, const KernelData<int,Simd> vec) const noexcept
+		{
+
+			for(int i=0;i<Simd;i++)
+			{
+				 data[i] = ptr[vec.data[i]];
+			}
+		}
+
+		// uses only first item of vec to compute the starting point of source ptr element.
+		// reads Simd number of elements from target starting from ptr + vec.data[0]
+		inline void readFromContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> vec) const noexcept
+		{
+			const int idx = vec.data[0];
+			for(int i=0;i<Simd;i++)
+			{
+				data[i] = ptr[idx+i];
 			}
 		}
 

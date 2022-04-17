@@ -1,5 +1,5 @@
 # VectorizedKernel
-Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX SIMD Architectures.
+Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX/AVX512 SIMD microarchitectures.
 
 Mandelbrot generation sample:
 
@@ -201,3 +201,5 @@ int getPoint(int a, int b)
 ```
 
 With 2.1GHz Fx8150 single thread + 1333MHz DDR3 RAM (single channel), it takes 380 cycles per pixel (or 190 ns per pixel) (or ~5 ns per iteration of pixel)
+
+For AVX512 server of Godbolt.org, it computes each pixel (35 iterations max) in 85 cycles. This means ~2 cycles per iteration per pixel or ~1 ns per iteration per pixel. 1000x1000 image takes ~40 milliseconds, single-thread, with zero explicit intrinsic instructions used.

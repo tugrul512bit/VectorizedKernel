@@ -1,6 +1,14 @@
 # VectorizedKernel
 Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX/AVX512 SIMD microarchitectures.
 
+How does it work?
+
+- User writes scalar-looking code (see below sample)
+- createKernel factory function is given the user lambda function ```[](auto factory, auto idThread, kernelArgs){}``` and schematics of the kernel parameters ```Vectorization::KernelArgs<int*>{}``` 
+- Kernel is launched for N times, computed by ```simd```-sized steps (can be bigger than actual SIMD width of CPU for extra pipelining)
+- When N is not integer multiple of simd, the remaining tail is computed with simd=1 automatically
+- User only takes care of the algorithm while each operation is done in parallel in 8,16,32,64,.. steps
+
 Mandelbrot generation sample:
 
 - 2.1GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=32): 350 cycles per pixel (or 190 ns per pixel) (or ~5 ns per iteration of pixel).

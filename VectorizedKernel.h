@@ -13,7 +13,8 @@
 #include <iostream>
 #include <string>
 #include <functional>
-#include<cmath>
+#include <cmath>
+
 
 
 namespace Vectorization
@@ -402,7 +403,7 @@ namespace Vectorization
 
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = data[i] * vec1.data[i] + vec2.data[i];
+				result.data[i] = std::fma(data[i], vec1.data[i], vec2.data[i]);
 			}
 			return result;
 		}
@@ -414,7 +415,7 @@ namespace Vectorization
 
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = data[i] * vec1.data[i] - vec2.data[i];
+				result.data[i] = std::fma(data[i], vec1.data[i], -vec2.data[i]);
 			}
 			return result;
 		}

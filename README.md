@@ -10,7 +10,6 @@ Mandelbrot generation sample:
 #include <sstream>
 #include <complex>
 #include <vector>
-#include "LoadBalancerX.h"
 
 using namespace std;
 
@@ -29,21 +28,8 @@ int main()
 	return 0;
 }
 
-template<int sz>
-class GrainState
-{
-public:
-	GrainState(){ buf=std::vector<int>(sz);start=0;range=0; }
-	int start;
-	int range;
-	std::vector<int> buf;
-};
 
-class DeviceState
-{
-public:
-	int deviceId;
-};
+
 #include <stdint.h>  // <cstdint> is preferred in C++, but stdint.h works.
 
 #ifdef _MSC_VER

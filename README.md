@@ -113,16 +113,13 @@ void createImage()
 		bool anyTrue = true;
 		auto iteration = factory.template generate<int>(0);
 		const auto iterationLimit = factory.template generate<int>(35);
-		const auto one = factory.template generate<int>(1);
-		const auto zero = factory.template generate<int>(0);
-		const auto four = factory.template generate<float>(4.0f);
 		while(anyTrue)
 		{
 			// an optimization for fma instruction
 			const auto realzClone = factory.template generate<float>(realz);
 
 			// computing while loop condition start
-            const auto imagzSquared = imagz.mul(imagz);
+            		const auto imagzSquared = imagz.mul(imagz);
 			const auto absLessThan2 = realz.fusedMultiplyAdd(realzClone,imagzSquared).lessThan(4.0f);
 			const auto whileLoopCondition = absLessThan2.logicalAnd(iteration.lessThanOrEquals(35));
 			anyTrue = whileLoopCondition.isAnyTrue();
@@ -137,7 +134,7 @@ void createImage()
 			imagz = whileLoopCondition.ternary( zzImag.add(imagc), imagz);
 
 			// increment iteration
-			iteration = iteration.add(whileLoopCondition.ternary(1,0)); // todo: ternary increment
+			iteration = iteration.add(whileLoopCondition.ternary(1,0));
 		}
 
 		const auto thirtyFour = factory.template generate<int>(34);

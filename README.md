@@ -15,7 +15,9 @@ What must be given to the lambda function as parameters?
 - second parameter: auto idThread (this is a scalar-looking variable that holds per-work-item id values that are zero-based, up to N given from run method)
 - all others: actual kernel arguments to be used for GPGPU computations (their blueprint is given like this: ```Vectorization::KernelArgs<your_arg_type>{}``` or this: ```Vectorization::KernelArgs<some_arg,some_other_arg>{}``` or anything with more template arguments to declare actual kernel arguments after the second parameter of lambda function )
 
-Mandelbrot generation sample:
+Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKernel/wiki.
+
+Mandelbrot generation sample that has more than 10x speedup (compared to scalar version) for avx512 cpu:
 
 - 2.1GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=4): 230 cycles per pixel.
 

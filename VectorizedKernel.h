@@ -54,7 +54,7 @@ namespace Vectorization
 
 		KernelData(){}
 
-		KernelData(const Type broadcastedInit)
+		KernelData(const Type & broadcastedInit) noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -62,7 +62,7 @@ namespace Vectorization
 			}
 		}
 
-		KernelData(const KernelData<Type,Simd> & vectorizedIit)
+		KernelData(const KernelData<Type,Simd> & vectorizedIit) noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -90,7 +90,7 @@ namespace Vectorization
 		}
 
 		// does scatter operation (every element writes its own targeted ptr element, decided by elements of id)
-		inline void writeTo(Type * const __restrict__ ptr, const KernelData<int,Simd> id) const noexcept
+		inline void writeTo(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) const noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -101,7 +101,7 @@ namespace Vectorization
 
 		// uses only first item of id to compute the starting point of target ptr element.
 		// writes Simd number of elements to target starting from ptr + id.data[0]
-		inline void writeToContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> id) const noexcept
+		inline void writeToContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) const noexcept
 		{
 			const int idx = id.data[0];
 			for(int i=0;i<Simd;i++)
@@ -111,7 +111,7 @@ namespace Vectorization
 		}
 
 		// does gather operation (every element reads its own sourced ptr element, decided by elements of id)
-		inline void readFrom(Type * const __restrict__ ptr, const KernelData<int,Simd> id) noexcept
+		inline void readFrom(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -122,7 +122,7 @@ namespace Vectorization
 
 		// uses only first item of id to compute the starting point of source ptr element.
 		// reads Simd number of elements from target starting from ptr + id.data[0]
-		inline void readFromContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> id) noexcept
+		inline void readFromContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) noexcept
 		{
 			const int idx = id.data[0];
 			for(int i=0;i<Simd;i++)
@@ -142,7 +142,7 @@ namespace Vectorization
 		}
 
 		// bool
-		inline KernelData<int,Simd> lessThan(const KernelData<Type,Simd> vec) const noexcept
+		inline KernelData<int,Simd> lessThan(const KernelData<Type,Simd> & vec) const noexcept
 		{
 			KernelData<int,Simd> result;
 
@@ -154,7 +154,7 @@ namespace Vectorization
 		}
 
 		// bool
-		inline KernelData<int,Simd> lessThanOrEquals(const KernelData<Type,Simd> vec) const noexcept
+		inline KernelData<int,Simd> lessThanOrEquals(const KernelData<Type,Simd> & vec) const noexcept
 		{
 			KernelData<int,Simd> result;
 
@@ -178,7 +178,7 @@ namespace Vectorization
 		}
 
 		// bool
-		inline KernelData<int,Simd> greaterThan(const KernelData<Type,Simd> vec) const noexcept
+		inline KernelData<int,Simd> greaterThan(const KernelData<Type,Simd> & vec) const noexcept
 		{
 			KernelData<int,Simd> result;
 
@@ -202,7 +202,7 @@ namespace Vectorization
 		}
 
 		// bool
-		inline KernelData<int,Simd> equals(const KernelData<Type,Simd> vec) const noexcept
+		inline KernelData<int,Simd> equals(const KernelData<Type,Simd> & vec) const noexcept
 		{
 			KernelData<int,Simd> result;
 
@@ -226,7 +226,7 @@ namespace Vectorization
 		}
 
 		// bool
-		inline KernelData<int,Simd> notEqual(const KernelData<Type,Simd> vec) const noexcept
+		inline KernelData<int,Simd> notEqual(const KernelData<Type,Simd> & vec) const noexcept
 		{
 			KernelData<int,Simd> result;
 
@@ -333,7 +333,7 @@ namespace Vectorization
 			}
 		}
 
-		inline void readFrom(const KernelData<Type,Simd> vec) noexcept
+		inline void readFrom(const KernelData<Type,Simd> & vec) noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -365,7 +365,7 @@ namespace Vectorization
 			return result;
 		}
 
-		inline const KernelData<Type,Simd> add(const KernelData<Type,Simd> vec) const noexcept
+		inline const KernelData<Type,Simd> add(const KernelData<Type,Simd> & vec) const noexcept
 		{
 			KernelData<Type,Simd> result;
 
@@ -376,7 +376,7 @@ namespace Vectorization
 			return result;
 		}
 
-		inline const KernelData<Type,Simd> sub(const KernelData<Type,Simd> vec) const noexcept
+		inline const KernelData<Type,Simd> sub(const KernelData<Type,Simd> & vec) const noexcept
 		{
 			KernelData<Type,Simd> result;
 
@@ -387,7 +387,7 @@ namespace Vectorization
 			return result;
 		}
 
-		inline const KernelData<Type,Simd> div(const KernelData<Type,Simd> vec) const noexcept
+		inline const KernelData<Type,Simd> div(const KernelData<Type,Simd> & vec) const noexcept
 		{
 			KernelData<Type,Simd> result;
 
@@ -398,7 +398,7 @@ namespace Vectorization
 			return result;
 		}
 
-		inline const KernelData<Type,Simd> div(const Type val) const noexcept
+		inline const KernelData<Type,Simd> div(const Type & val) const noexcept
 		{
 			KernelData<Type,Simd> result;
 
@@ -411,7 +411,7 @@ namespace Vectorization
 
 
 
-		inline const KernelData<Type,Simd> mul(const KernelData<Type,Simd> vec) const noexcept
+		inline const KernelData<Type,Simd> mul(const KernelData<Type,Simd> & vec) const noexcept
 		{
 			KernelData<Type,Simd> result;
 
@@ -423,7 +423,7 @@ namespace Vectorization
 		}
 
 		// returns current vector * vec1 + vec2
-		inline const KernelData<Type,Simd> fusedMultiplyAdd(const KernelData<Type,Simd> vec1, const KernelData<Type,Simd> vec2) const noexcept
+		inline const KernelData<Type,Simd> fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2) const noexcept
 		{
 			KernelData<Type,Simd> result;
 
@@ -435,7 +435,7 @@ namespace Vectorization
 		}
 
 		// returns current vector * vec1 - vec2
-		inline const KernelData<Type,Simd> fusedMultiplySub(const KernelData<Type,Simd> vec1, const KernelData<Type,Simd> vec2) const noexcept
+		inline const KernelData<Type,Simd> fusedMultiplySub(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2) const noexcept
 		{
 			KernelData<Type,Simd> result;
 
@@ -446,7 +446,7 @@ namespace Vectorization
 			return result;
 		}
 
-		inline const KernelData<Type,Simd> mul(const Type val) const noexcept
+		inline const KernelData<Type,Simd> mul(const Type & val) const noexcept
 		{
 			KernelData<Type,Simd> result;
 
@@ -457,7 +457,7 @@ namespace Vectorization
 			return result;
 		}
 
-		inline const KernelData<Type,Simd> modulus(const KernelData<Type,Simd> vec) const noexcept
+		inline const KernelData<Type,Simd> modulus(const KernelData<Type,Simd> & vec) const noexcept
 		{
 			KernelData<Type,Simd> result;
 
@@ -468,7 +468,7 @@ namespace Vectorization
 			return result;
 		}
 
-		inline const KernelData<Type,Simd> modulus(const Type val) const noexcept
+		inline const KernelData<Type,Simd> modulus(const Type & val) const noexcept
 		{
 			KernelData<Type,Simd> result;
 

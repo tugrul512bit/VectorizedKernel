@@ -15,7 +15,7 @@
 #include <functional>
 #include <cmath>
 #include <chrono>
-#include <x86intrin.h>
+
 
 namespace Vectorization
 {

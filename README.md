@@ -12,7 +12,7 @@ How does it work?
 What must be given to the lambda function as parameters?
 
 - first parameter: auto factory (this is used for constructing scalar-looking variables that do compute in parallel)
-- second parameter: auto idThread (this is a scalar-looking variable that holds per-work-item id values that are zero-based, up to N given from run method)
+- second parameter: auto idThread (this is a scalar-looking parallel variable that holds per-work-item id values that are zero-based, up to N given from run method)
 - all others: actual kernel arguments to be used for GPGPU computations (their blueprint is given like this: ```Vectorization::KernelArgs<your_arg_type>{}``` or this: ```Vectorization::KernelArgs<some_arg,some_other_arg>{}``` or anything with more template arguments to declare actual kernel arguments after the second parameter of lambda function )
 
 Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKernel/wiki.
@@ -24,7 +24,6 @@ Hello-world:
 #include <iostream>
 int main()
 {
-	// memcpy kernel
 	constexpr int simd = 8; // >= SIMD width of CPU (bigger  = more pipelining)
 
 	auto kernelHelloWorld = Vectorization::createKernel<simd>([&](auto & factory, auto & idThread, float * bufferIn, float * bufferOut){

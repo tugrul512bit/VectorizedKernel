@@ -19,9 +19,9 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 
 Mandelbrot generation sample that has more than 10x speedup (compared to scalar version) for avx512 cpu:
 
-- 2.1GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=4): 230 cycles per pixel.
+- 3.6GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=32): 88 cycles per pixel.
 
-- Godbolt.org AVX512 server single thread (simd=64): 55 cycles per pixel (-std=c++2a  -O3 -march=cascadelake -mprefer-vector-width=512 -ftree-vectorize -fno-math-errno )
+- Godbolt.org AVX512 server single thread (simd=32): 33 cycles per pixel (-std=c++2a -O3 -march=cascadelake -mavx512f -mavx512bw -mprefer-vector-width=512  -ftree-vectorize -fno-math-errno)
 
 ```C++
 #include <iostream>
@@ -82,7 +82,7 @@ void createImage()
 	 */
 
 	// single-thread vectorized
-	constexpr int simd = 64; // 8 for bulldozer, 16 for avx2 cpu, 64 for avx512
+	constexpr int simd = 32; // 8 for bulldozer, 16 for avx2 cpu, 64 for avx512
 	auto kernel = Vectorization::createKernel<simd>([&](auto & factory, auto & idThread, int * img){
 
 
@@ -117,18 +117,16 @@ void createImage()
 		const auto iterationLimit = factory.template generate<int>(35);
 		while(anyTrue)
 		{
-			// an optimization for fma instruction
-			const auto realzClone = factory.template generate<float>(realz);
 
 			// computing while loop condition start
-            		const auto imagzSquared = imagz.mul(imagz);
-			const auto absLessThan2 = realz.fusedMultiplyAdd(realzClone,imagzSquared).lessThan(4.0f);
+            const auto imagzSquared = imagz.mul(imagz);
+			const auto absLessThan2 = realz.fusedMultiplyAdd(realz,imagzSquared).lessThan(4.0f);
 			const auto whileLoopCondition = absLessThan2.logicalAnd(iteration.lessThanOrEquals(35));
 			anyTrue = whileLoopCondition.isAnyTrue();
 			// computing while loop condition end
 
 			// do complex multiplication z = z*z + c
-			const auto zzReal = realz.fusedMultiplySub(realzClone,imagzSquared);
+			const auto zzReal = realz.fusedMultiplySub(realz,imagzSquared);
 			const auto zzImag = realz.fusedMultiplyAdd(imagz,imagz.mul(realz));
 
 			// if a lane has completed work, do not modify it

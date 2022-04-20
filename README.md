@@ -81,10 +81,8 @@ Mandelbrot generation sample that has more than 10x speedup (compared to scalar 
 
 using namespace std;
 
-constexpr int frames=20;
 constexpr float width = 2000;
 constexpr float height = 2000;
-constexpr int grainSize=width/4; // pixels
 void createImage();
 int getPoint(int x, int y);
 

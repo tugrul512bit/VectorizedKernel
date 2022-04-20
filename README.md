@@ -1,10 +1,10 @@
 # VectorizedKernel
-Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX/AVX512 SIMD microarchitectures.
+Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX/AVX512 SIMD microarchitectures without any platform-dependency but a C++14 compiler.
 
 How does it work?
 
 - User writes scalar-looking code (see below sample)
-- createKernel factory function is given the user lambda function ```[](auto factory, auto idThread, kernelArgs){}``` and blueprint of the kernel parameters ```Vectorization::KernelArgs<int*>{}``` 
+- createKernel factory function is given a user-lambda function ```[](auto factory, auto idThread, kernelArgs){}``` and a blueprint of the kernel parameters ```Vectorization::KernelArgs<int*>{}``` 
 - Kernel is launched for N times, computed by ```simd```-sized steps (can be bigger than actual SIMD width of CPU for extra pipelining)
 - When N is not integer multiple of simd, the remaining tail is computed with simd=1 automatically
 - User only takes care of the algorithm while each operation is done in parallel in 8,16,32,64,.. steps
@@ -24,6 +24,8 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 - computation methods require firstOperand.methodName(secondOperand,result)
 - ternary requires conditionObject.ternary(trueChoice,falseChoice,result)
 - logical methods require firstOperand.logicalAnd(secondOperand,result)
+- logical results are of type "integer" vector (because the width of result vector has to be same as float vector).
+
 
 Hello-world:
 

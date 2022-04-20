@@ -17,11 +17,51 @@ What must be given to the lambda function as parameters?
 
 Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKernel/wiki.
 
+Hello-world:
+
+```C++
+#include "VectorizedKernel.h"
+#include <iostream>
+int main()
+{
+	// memcpy kernel
+	constexpr int simd = 8; // >= SIMD width of CPU (bigger  = more pipelining)
+
+	auto kernelHelloWorld = Vectorization::createKernel<simd>([&](auto & factory, auto & idThread, float * bufferIn, float * bufferOut){
+
+		const int currentSimdWidth = factory.width;
+		auto tmp = factory.template generate<float>();
+		tmp.readFromContiguous(bufferIn,idThread); // contiguous (first work-item in simd group decides where to read)
+		tmp.add(0.33f,tmp);
+		tmp.writeToContiguous(bufferOut,idThread); // contiguous (first work-item in simd group decides where to write)
+
+	}, /* defining kernel parameter types */ Vectorization::KernelArgs<float*,float*>{});
+
+	// size does not have to be multiple of simd
+	const int n = 23;
+
+	// better performance with aligned buffers
+	float vecIn[n], vecOut[n];
+	for(int i=0;i<n;i++)
+	{
+		vecIn[i]=i;
+	}
+	kernelHelloWorld.run(n,vecIn,vecOut);
+	for(int i=0;i<n;i++)
+	{
+		std::cout<<vecOut[i]<<" ";
+	}
+	std::cout<<std::endl;
+	return 0;
+}
+
+```
+
 Mandelbrot generation sample that has more than 10x speedup (compared to scalar version) for avx512 cpu:
 
-- 3.6GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=32): 91 cycles per pixel.
+- 3.6GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=32): 91 cycles per pixel (~30 ms per 1000x1000 image).
 
-- Godbolt.org AVX512 server single thread (simd=32): 19 cycles per pixel (-std=c++2a -O3 -march=cascadelake -mavx512f -mavx512bw -mprefer-vector-width=512  -ftree-vectorize -fno-math-errno)
+- Godbolt.org AVX512 server single thread (simd=32): 19 cycles per pixel (-std=c++2a -O3 -march=cascadelake -mavx512f -mavx512bw -mprefer-vector-width=512  -ftree-vectorize -fno-math-errno) (less than 10 ms per 1000x1000 image)
 
 ```C++
 #include <iostream>

@@ -19,9 +19,9 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 
 Mandelbrot generation sample that has more than 10x speedup (compared to scalar version) for avx512 cpu:
 
-- 3.6GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=32): 88 cycles per pixel.
+- 3.6GHz Fx8150 single thread + 1333MHz DDR3 RAM (simd=32): 91 cycles per pixel.
 
-- Godbolt.org AVX512 server single thread (simd=32): 33 cycles per pixel (-std=c++2a -O3 -march=cascadelake -mavx512f -mavx512bw -mprefer-vector-width=512  -ftree-vectorize -fno-math-errno)
+- Godbolt.org AVX512 server single thread (simd=32): 19 cycles per pixel (-std=c++2a -O3 -march=cascadelake -mavx512f -mavx512bw -mprefer-vector-width=512  -ftree-vectorize -fno-math-errno)
 
 ```C++
 #include <iostream>
@@ -72,6 +72,28 @@ void createImage()
 
 	// compute single-thread "scalar" CPU
 	/*
+
+	 int getPoint(int a, int b)
+	{
+		float x = static_cast<float>(b);
+		float y = static_cast<float>(a);
+		x = (x - width / 2 - width/4)/(width/3);
+		y = (height / 2 - y)/(width/3);
+
+
+		complex<float> c (x,y);
+
+		complex <float> z(0, 0);
+		size_t iter = 0;
+		while (abs(z) < 2 && iter <= 35)
+		{
+			z = z * z + c;
+			iter++;
+		}
+		if (iter < 34) return iter*255/33;
+		else return 0;
+	}
+
 	for (size_t i = 0; i < height; i++)
 	{
 		for (size_t j = 0; j < width; j++)
@@ -82,71 +104,101 @@ void createImage()
 	 */
 
 	// single-thread vectorized
-	constexpr int simd = 32; // 8 for bulldozer, 16 for avx2 cpu, 64 for avx512
+	constexpr int simd = 32;
 	auto kernel = Vectorization::createKernel<simd>([&](auto & factory, auto & idThread, int * img){
+		auto j = factory.template generate<int>();
+		idThread.modulus(width, j);
 
+		auto i = factory.template generate<int>();
+		idThread.div(width, i);
 
-
-		const auto j = idThread.modulus(width);
-		const auto i = idThread.div(width);
 		const int vecWidth = factory.width;
 
-
-
-		auto x0 = j.template cast<float>();
-		auto y0 = i.template cast<float>();
+		auto x0 = factory.template generate<float>();
+		j.template cast<float>(x0);
+		auto y0 = factory.template generate<float>();
+		i.template cast<float>(y0);
 
 		const auto heightDiv2 = factory.template generate<float>(height/2.0f);
 
-		const auto x = x0.sub(width/2.0f).sub(width/4.0f).div(width/3.0f);
-		const auto y = heightDiv2.sub(y0).div(width/3.0f);
+		auto x = factory.template generate<float>();
+		x0.sub(width/2.0f, x0);
 
+		x0.sub(width/4.0f, x0);
+		x0.div(width/3.0f,x);
+
+		auto y =  factory.template generate<float>();
+		heightDiv2.sub(y0,y0);
+		y0.div(width/3.0f, y);
 
 		const auto imagc = factory.template generate<float>(y);
 		const auto realc = factory.template generate<float>(x);
 
-
-
 		auto imagz = factory.template generate<float>(0);
 		auto realz = factory.template generate<float>(0);
-
 
 		// loop
 		bool anyTrue = true;
 		auto iteration = factory.template generate<int>(0);
 		const auto iterationLimit = factory.template generate<int>(35);
+
+		// allocate all re-used resources
+		auto imagzSquared = factory.template generate<float>();
+		auto absLessThan2 = factory.template generate<int>();
+		auto tmp1 = factory.template generate<float>();
+		auto whileLoopCondition = factory.template generate<int>();
+		auto tmp2 = factory.template generate<int>();
+		auto zzReal = factory.template generate<float>();
+
+		auto zzImag = factory.template generate<float>();
+		auto tmp3 = factory.template generate<float>();
+		auto tmpAdd1 = factory.template generate<float>();
+		auto tmpAdd2 = factory.template generate<float>();
+		auto tmp4 = factory.template generate<int>();
 		while(anyTrue)
 		{
 
 			// computing while loop condition start
-            const auto imagzSquared = imagz.mul(imagz);
-			const auto absLessThan2 = realz.fusedMultiplyAdd(realz,imagzSquared).lessThan(4.0f);
-			const auto whileLoopCondition = absLessThan2.logicalAnd(iteration.lessThanOrEquals(35));
+            imagz.mul(imagz, imagzSquared);
+			realz.fusedMultiplyAdd(realz,imagzSquared,tmp1);
+			tmp1.lessThan(4.0f, absLessThan2);
+
+			iteration.lessThanOrEquals(35, tmp2);
+			absLessThan2.logicalAnd(tmp2, whileLoopCondition);
 			anyTrue = whileLoopCondition.isAnyTrue();
 			// computing while loop condition end
 
 			// do complex multiplication z = z*z + c
-			const auto zzReal = realz.fusedMultiplySub(realz,imagzSquared);
-			const auto zzImag = realz.fusedMultiplyAdd(imagz,imagz.mul(realz));
+			realz.fusedMultiplySub(realz,imagzSquared, zzReal);
+			imagz.mul(realz, tmp3);
+			realz.fusedMultiplyAdd(imagz,tmp3, zzImag);
 
 			// if a lane has completed work, do not modify it
-			realz = whileLoopCondition.ternary( zzReal.add(realc), realz);
-			imagz = whileLoopCondition.ternary( zzImag.add(imagc), imagz);
+			zzReal.add(realc, tmpAdd1);
+			zzImag.add(imagc, tmpAdd2);
+			whileLoopCondition.ternary(tmpAdd1, realz, realz);
+			whileLoopCondition.ternary(tmpAdd2, imagz, imagz);
 
 			// increment iteration
-			iteration = iteration.add(whileLoopCondition.ternary(1,0));
+			whileLoopCondition.ternary(1,0, tmp4);
+			iteration.add(tmp4, iteration);
 		}
 
 		const auto thirtyFour = factory.template generate<int>(34);
+		auto ifLessThanThirtyFour = factory.template generate<int>();
+		iteration.lessThan(thirtyFour, ifLessThanThirtyFour);
 
+		auto conditionalValue1 = factory.template generate<int>();
+		iteration.mul(255, conditionalValue1);
+		conditionalValue1.div(33, conditionalValue1);
 
-		const auto ifLessThanThirtyFour = iteration.lessThan(thirtyFour);
-
-		const auto conditionalValue1 = iteration.mul(255).div(33);
-		const auto conditionalValue2 = factory.template generate<int>(0);
-
-		const auto returnValue       = ifLessThanThirtyFour.ternary(conditionalValue1, conditionalValue2);
-		const auto writeAddr = j.add(i.mul(width));
+		auto conditionalValue2 = factory.template generate<int>(0);
+		auto returnValue = factory.template generate<int>(0);
+		ifLessThanThirtyFour.ternary(conditionalValue1, conditionalValue2, returnValue);
+		auto tmp5 = factory.template generate<int>();
+		i.mul(width, tmp5);
+		auto writeAddr = factory.template generate<int>(0);
+		j.add(tmp5, writeAddr);
 
 		returnValue.writeTo(img,writeAddr);
 
@@ -183,27 +235,6 @@ void createImage()
 	{
 		cout << "Could not open the file!" << endl;
 	}
-}
-
-int getPoint(int a, int b)
-{
-	float x = static_cast<float>(b);
-	float y = static_cast<float>(a);
-	x = (x - width / 2 - width/4)/(width/3);
-	y = (height / 2 - y)/(width/3);
-
-
-	complex<float> c (x,y);
-
-	complex <float> z(0, 0);
-	size_t iter = 0;
-	while (abs(z) < 2 && iter <= 35)
-	{
-		z = z * z + c;
-		iter++;
-	}
-	if (iter < 34) return iter*255/33;
-	else return 0;
 }
 
 ```

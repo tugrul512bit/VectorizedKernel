@@ -115,9 +115,9 @@ void createImage()
 		const int vecWidth = factory.width;
 
 		auto x0 = factory.template generate<float>();
-		j.template cast<float>(x0);
+		j.template castAndCopyTo<float>(x0);
 		auto y0 = factory.template generate<float>();
-		i.template cast<float>(y0);
+		i.template castAndCopyTo<float>(y0);
 
 		const auto heightDiv2 = factory.template generate<float>(height/2.0f);
 

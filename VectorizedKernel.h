@@ -15,7 +15,7 @@
 #include <functional>
 #include <cmath>
 #include <chrono>
-
+#include <x86intrin.h>
 
 namespace Vectorization
 {
@@ -49,13 +49,17 @@ namespace Vectorization
 	template<typename Type, int Simd>
 	struct KernelData
 	{
+
 		alignas(32)
 		Type data[Simd];
+
+
 
 		KernelData(){}
 
 		KernelData(const Type & broadcastedInit) noexcept
 		{
+
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = broadcastedInit;
@@ -64,12 +68,46 @@ namespace Vectorization
 
 		KernelData(const KernelData<Type,Simd> & vectorizedIit) noexcept
 		{
+
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = vectorizedIit.data[i];
 			}
 		}
 
+
+		KernelData(KernelData&& dat){
+
+			for(int i=0;i<Simd;i++)
+			{
+				data[i] = dat.data[i];
+			}
+	    }
+		KernelData& operator=(const KernelData& dat){
+
+			for(int i=0;i<Simd;i++)
+			{
+				data[i] = dat.data[i];
+			}
+	        return *this;
+	    };
+		KernelData& operator=(KernelData&& dat){
+
+			for(int i=0;i<Simd;i++)
+			{
+				data[i] = dat.data[i];
+			}
+	        return *this;
+
+	    };
+	    ~KernelData(){
+
+	    };
+
+	    inline KernelData<Type,Simd> & assign()
+		{
+	    	return *this;
+		}
 
 		inline void readFrom(const Type * const __restrict__ ptr) noexcept
 		{
@@ -142,138 +180,103 @@ namespace Vectorization
 		}
 
 		// bool
-		inline KernelData<int,Simd> lessThan(const KernelData<Type,Simd> & vec) const noexcept
+		inline void lessThan(const KernelData<Type,Simd> & vec, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]<vec.data[i];
 			}
-			return result;
 		}
 
 		// bool
-		inline KernelData<int,Simd> lessThanOrEquals(const KernelData<Type,Simd> & vec) const noexcept
+		inline void lessThanOrEquals(const KernelData<Type,Simd> & vec, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]<=vec.data[i];
 			}
-			return result;
 		}
 
 		// bool
-		inline KernelData<int,Simd> lessThanOrEquals(const Type val) const noexcept
+		inline void lessThanOrEquals(const Type val, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]<=val;
 			}
-			return result;
 		}
 
 		// bool
-		inline KernelData<int,Simd> greaterThan(const KernelData<Type,Simd> & vec) const noexcept
+		inline void greaterThan(const KernelData<Type,Simd> & vec, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]>vec.data[i];
 			}
-			return result;
 		}
 
 		// bool
-		inline KernelData<int,Simd> greaterThan(const Type val) const noexcept
+		inline void greaterThan(const Type val, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]>val;
 			}
-			return result;
 		}
 
 		// bool
-		inline KernelData<int,Simd> equals(const KernelData<Type,Simd> & vec) const noexcept
+		inline void equals(const KernelData<Type,Simd> & vec, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] == vec.data[i];
 			}
-			return result;
 		}
 
 		// bool
-		inline KernelData<int,Simd> equals(const Type val) const noexcept
+		inline void equals(const Type val, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] == val;
 			}
-			return result;
 		}
 
 		// bool
-		inline KernelData<int,Simd> notEqual(const KernelData<Type,Simd> & vec) const noexcept
+		inline void notEqual(const KernelData<Type,Simd> & vec, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] != vec.data[i];
 			}
-			return result;
 		}
 
 		// bool
-		inline KernelData<int,Simd> notEqual(const Type val) const noexcept
+		inline  void notEqual(const Type val, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] != val;
 			}
-			return result;
 		}
 
 
 		// bool
-		inline KernelData<int,Simd> logicalAnd(const KernelData<int,Simd> vec) const noexcept
+		inline  void logicalAnd(const KernelData<int,Simd> vec, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] && vec.data[i];
 			}
-			return result;
 		}
 
 		// bool
-		inline KernelData<int,Simd> logicalOr(const KernelData<int,Simd> vec) const noexcept
+		inline void logicalOr(const KernelData<int,Simd> vec, KernelData<int,Simd> & result) const noexcept
 		{
-			KernelData<int,Simd> result;
-
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] || vec.data[i];
 			}
-			return result;
 		}
 
 		inline bool areAllTrue() const noexcept
@@ -301,27 +304,21 @@ namespace Vectorization
 		}
 
 		template<typename ComparedType>
-		inline const KernelData<ComparedType,Simd> ternary(const KernelData<ComparedType,Simd> vec1, const KernelData<ComparedType,Simd> vec2) const noexcept
+		inline void ternary(const KernelData<ComparedType,Simd> vec1, const KernelData<ComparedType,Simd> vec2, KernelData<ComparedType,Simd> & result) const noexcept
 		{
-			KernelData<ComparedType,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]?vec1.data[i]:vec2.data[i];
 			}
-			return result;
 		}
 
 		template<typename ComparedType>
-		inline const KernelData<ComparedType,Simd> ternary(const ComparedType val1, const ComparedType val2) const noexcept
+		inline void ternary(const ComparedType val1, const ComparedType val2, KernelData<ComparedType,Simd> & result) const noexcept
 		{
-			KernelData<ComparedType,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]?val1:val2;
 			}
-			return result;
 		}
 
 		inline void broadcast(const Type val) noexcept
@@ -335,7 +332,6 @@ namespace Vectorization
 
 		inline void readFrom(const KernelData<Type,Simd> & vec) noexcept
 		{
-
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = vec.data[i];
@@ -343,143 +339,107 @@ namespace Vectorization
 		}
 
 		template<typename NewType>
-		inline const KernelData<NewType,Simd> cast() const noexcept
+		inline void castAndCopyTo(KernelData<NewType,Simd> & result) const noexcept
 		{
-			KernelData<NewType,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = (NewType)data[i];
 			}
-			return result;
 		}
 
-		inline const KernelData<Type,Simd> sqrt() const noexcept
+		inline  void sqrt(KernelData<Type,Simd> & result) const noexcept
 		{
-			KernelData<Type,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::sqrt(data[i]);
 			}
-			return result;
 		}
 
-		inline const KernelData<Type,Simd> add(const KernelData<Type,Simd> & vec) const noexcept
+		inline  void add(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
-			KernelData<Type,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] + vec.data[i];
 			}
-			return result;
 		}
 
-		inline const KernelData<Type,Simd> sub(const KernelData<Type,Simd> & vec) const noexcept
+		inline void sub(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
-			KernelData<Type,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] - vec.data[i];
 			}
-			return result;
 		}
 
-		inline const KernelData<Type,Simd> div(const KernelData<Type,Simd> & vec) const noexcept
+		inline void div(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
-			KernelData<Type,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] / vec.data[i];
 			}
-			return result;
 		}
 
-		inline const KernelData<Type,Simd> div(const Type & val) const noexcept
+		inline void div(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
-			KernelData<Type,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] / val;
 			}
-			return result;
 		}
 
 
 
-		inline const KernelData<Type,Simd> mul(const KernelData<Type,Simd> & vec) const noexcept
+		inline void mul(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
-			KernelData<Type,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] * vec.data[i];
 			}
-			return result;
 		}
 
-		// returns current vector * vec1 + vec2
-		inline const KernelData<Type,Simd> fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2) const noexcept
-		{
-			KernelData<Type,Simd> result;
 
+		inline void fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
+		{
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::fma(data[i], vec1.data[i], vec2.data[i]);
 			}
-			return result;
 		}
 
-		// returns current vector * vec1 - vec2
-		inline const KernelData<Type,Simd> fusedMultiplySub(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2) const noexcept
-		{
-			KernelData<Type,Simd> result;
 
+		inline void fusedMultiplySub(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
+		{
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::fma(data[i], vec1.data[i], -vec2.data[i]);
 			}
-			return result;
 		}
 
-		inline const KernelData<Type,Simd> mul(const Type & val) const noexcept
+		inline void mul(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
-			KernelData<Type,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] * val;
 			}
-			return result;
 		}
 
-		inline const KernelData<Type,Simd> modulus(const KernelData<Type,Simd> & vec) const noexcept
+		inline void modulus(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
-			KernelData<Type,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] % vec.data[i];
 			}
-			return result;
 		}
 
-		inline const KernelData<Type,Simd> modulus(const Type & val) const noexcept
+		inline  void modulus(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
-			KernelData<Type,Simd> result;
-
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] % val;
 			}
-			return result;
 		}
 	};
-
+	// todo: look at expression templates
 
 
 

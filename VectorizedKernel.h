@@ -109,6 +109,7 @@ namespace Vectorization
 	    	return *this;
 		}
 
+	    // contiguous read element by element starting from beginning of ptr
 		inline void readFrom(const Type * const __restrict__ ptr) noexcept
 		{
 
@@ -118,6 +119,7 @@ namespace Vectorization
 			}
 		}
 
+		// contiguous write element by element starting from beginning of ptr
 		inline void writeTo(Type * const __restrict__ ptr) const noexcept
 		{
 
@@ -439,7 +441,6 @@ namespace Vectorization
 			}
 		}
 	};
-	// todo: look at expression templates
 
 
 

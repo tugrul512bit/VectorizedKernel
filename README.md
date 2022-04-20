@@ -19,7 +19,8 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 
 ### How do variables' methods work?
 
-- memory read/write methods require a pointer to target pointer and an index object
+- contiguous memory read/write methods require a pointer to target pointer and an index object: variable.writeToContiguous(ptr,index)
+- scatter/gather operations (similar to the contiguous read/write) requires: variable.writeTo(ptr,index) only difference is each element goes different its own index
 - computation methods require firstOperand.methodName(secondOperand,result)
 - ternary requires conditionObject.ternary(trueChoice,falseChoice,result)
 - logical methods require firstOperand.logicalAnd(secondOperand,result)

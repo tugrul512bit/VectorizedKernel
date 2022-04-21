@@ -440,6 +440,31 @@ namespace Vectorization
 				result.data[i] = data[i] % val;
 			}
 		}
+
+		inline void leftShift(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] << vec.data[i];
+			}
+		}
+
+		inline void rightShift(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] >> vec.data[i];
+			}
+		}
+
+		// this doesn't vectorize yet
+		inline void pow(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::pow(data[i],vec.data[i]);
+			}
+		}
 	};
 
 
@@ -499,9 +524,9 @@ namespace Vectorization
 		{
 			const int nLoop = (n/SimdWidth);
 			const KernelDataFactory<SimdWidth> factory;
+			auto id = factory.template generate<int>();
 			for(int i=0;i<nLoop;i++)
 			{
-				auto id = factory.template generate<int>();
 				id.idCompute(i*SimdWidth,[](const int prm){ return prm;});
 				kernel(factory, id, args...);
 			}
@@ -513,9 +538,10 @@ namespace Vectorization
 				const KernelDataFactory<1> factoryLast;
 
 				const int m = n%SimdWidth;
+				auto id = factoryLast.template generate<int>();
 				for(int i=0;i<m;i++)
 				{
-					auto id = factoryLast.template generate<int>();
+
 					id.idCompute(nLoop*SimdWidth+i,[](const int prm){ return prm;});
 					kernel(factoryLast, id, args...);
 				}

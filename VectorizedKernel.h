@@ -365,11 +365,27 @@ namespace Vectorization
 			}
 		}
 
+		inline  void add(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] + val;
+			}
+		}
+
 		inline void sub(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] - vec.data[i];
+			}
+		}
+
+		inline void sub(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] - val;
 			}
 		}
 
@@ -391,13 +407,7 @@ namespace Vectorization
 
 
 
-		inline void mul(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
-		{
-			for(int i=0;i<Simd;i++)
-			{
-				result.data[i] = data[i] * vec.data[i];
-			}
-		}
+
 
 
 		inline void fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
@@ -408,12 +418,67 @@ namespace Vectorization
 			}
 		}
 
+		inline void fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::fma(data[i], vec1.data[i], val2);
+			}
+		}
+
+		inline void fusedMultiplyAdd(const Type & val1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::fma(data[i], val1, vec2.data[i]);
+			}
+		}
+
+		inline void fusedMultiplyAdd(const Type & val1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::fma(data[i], val1, val2);
+			}
+		}
 
 		inline void fusedMultiplySub(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::fma(data[i], vec1.data[i], -vec2.data[i]);
+			}
+		}
+
+		inline void fusedMultiplySub(const Type & val1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::fma(data[i], val1, -vec2.data[i]);
+			}
+		}
+
+		inline void fusedMultiplySub(const KernelData<Type,Simd> & vec1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::fma(data[i], vec1.data[i], -val2);
+			}
+		}
+
+		inline void fusedMultiplySub(const Type & val1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::fma(data[i], val1, -val2);
+			}
+		}
+
+		inline void mul(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] * vec.data[i];
 			}
 		}
 
@@ -449,11 +514,27 @@ namespace Vectorization
 			}
 		}
 
+		inline void leftShift(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] << val;
+			}
+		}
+
 		inline void rightShift(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] >> vec.data[i];
+			}
+		}
+
+		inline void rightShift(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] >> val;
 			}
 		}
 
@@ -463,6 +544,26 @@ namespace Vectorization
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::pow(data[i],vec.data[i]);
+			}
+		}
+
+		// this function is not accelerated. use it sparsely.
+		// x^y = x.pow(y,result)
+		inline void pow(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::pow(data[i],val);
+			}
+		}
+
+		// this function is not accelerated. use it sparsely.
+		// computes y^x = x.powFrom(y,result) is called
+		inline void powFrom(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::pow(val,data[i]);
 			}
 		}
 
@@ -503,6 +604,14 @@ namespace Vectorization
 			}
 		}
 
+		inline void bitwiseXor(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] ^ val;
+			}
+		}
+
 		inline void bitwiseAnd(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
@@ -511,11 +620,27 @@ namespace Vectorization
 			}
 		}
 
+		inline void bitwiseAnd(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] & val;
+			}
+		}
+
 		inline void bitwiseOr(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] | vec.data[i];
+			}
+		}
+
+		inline void bitwiseOr(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] | val;
 			}
 		}
 

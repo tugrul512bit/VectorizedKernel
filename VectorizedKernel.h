@@ -457,12 +457,39 @@ namespace Vectorization
 			}
 		}
 
-		// this doesn't vectorize yet
+		// this function is not accelerated. use it sparsely.
 		inline void pow(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::pow(data[i],vec.data[i]);
+			}
+		}
+
+		// this function is not accelerated. use it sparsely.
+		inline void exp(KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::exp(data[i]);
+			}
+		}
+
+		// this function is not accelerated. use it sparsely.
+		inline void log(KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::log(data[i]);
+			}
+		}
+
+		// this function is not accelerated. use it sparsely.
+		inline void log2(KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = std::log2(data[i]);
 			}
 		}
 	};

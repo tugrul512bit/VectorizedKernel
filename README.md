@@ -73,86 +73,24 @@ Mandelbrot generation sample that has more than 10x speedup (compared to scalar 
 - Godbolt.org AVX512 server single thread (simd=32): 19 cycles per pixel (-std=c++2a -O3 -march=cascadelake -mavx512f -mavx512bw -mprefer-vector-width=512  -ftree-vectorize -fno-math-errno) (less than 10 ms per 1000x1000 image)
 
 ```C++
-#include <iostream>
-#include <fstream>
-#include <sstream>
+// 22 cycles per pixel mandelbrot (cascadelake)
+#include <algorithm>
 #include <complex>
-#include <vector>
-
-using namespace std;
-
-constexpr float width = 2000;
-constexpr float height = 2000;
-void createImage();
-int getPoint(int x, int y);
-
-#include "VectorizedKernel.h"
-int main()
-{
-	createImage();
-
-	return 0;
-}
+#include <cstdint>
+#include <fstream>
+#include <iostream>
 
 
-#include <stdint.h>  // <cstdint> is preferred in C++, but stdint.h works.
-
-#ifdef _MSC_VER
-# include <intrin.h>
-#else
-# include <x86intrin.h>
-#endif
-
-// optional wrapper if you don't want to just use __rdtsc() everywhere
-inline
-uint64_t readTSC() {
-    // _mm_lfence();  // optionally wait for earlier insns to retire before reading the clock
-    uint64_t tsc = __rdtsc();
-    // _mm_lfence();  // optionally block later instructions until rdtsc retires
-    return tsc;
-}
-void createImage()
-{
-
-	std::vector<int> img(height*width);
+#include"VectorizedKernel.h"
 
 
-	// compute single-thread "scalar" CPU
-	/*
+constexpr int width = 2000;
+constexpr int height = 2000;
+constexpr int simd = 32;
 
-	 int getPoint(int a, int b)
-	{
-		float x = static_cast<float>(b);
-		float y = static_cast<float>(a);
-		x = (x - width / 2 - width/4)/(width/3);
-		y = (height / 2 - y)/(width/3);
+std::vector<char> Mandelbrot() {
 
-
-		complex<float> c (x,y);
-
-		complex <float> z(0, 0);
-		size_t iter = 0;
-		while (abs(z) < 2 && iter <= 35)
-		{
-			z = z * z + c;
-			iter++;
-		}
-		if (iter < 34) return iter*255/33;
-		else return 0;
-	}
-
-	for (size_t i = 0; i < height; i++)
-	{
-		for (size_t j = 0; j < width; j++)
-		{
-			img[j+i*width]= getPoint(i, j);
-		}
-	}
-	 */
-
-	// single-thread vectorized
-	constexpr int simd = 32;
-	auto kernel = Vectorization::createKernel<simd>([&](auto & factory, auto & idThread, int * img){
+	auto kernel = Vectorization::createKernel<simd>([&](auto & factory, auto & idThread, char * img){
 		auto j = factory.template generate<int>();
 		idThread.modulus(width, j);
 
@@ -206,7 +144,7 @@ void createImage()
 		{
 
 			// computing while loop condition start
-            		imagz.mul(imagz, imagzSquared);
+            imagz.mul(imagz, imagzSquared);
 			realz.fusedMultiplyAdd(realz,imagzSquared,tmp1);
 			tmp1.lessThan(4.0f, absLessThan2);
 
@@ -246,43 +184,59 @@ void createImage()
 		i.mul(width, tmp5);
 		auto writeAddr = factory.template generate<int>(0);
 		j.add(tmp5, writeAddr);
+		auto returnValueChar =  factory.template generate<char>(0);
+		returnValue.template castAndCopyTo<char>(returnValueChar);
+		returnValueChar.writeTo(img,writeAddr);
 
-		returnValue.writeTo(img,writeAddr);
-
-	},Vectorization::KernelArgs<int*>{});
-
-	for(int i=0;i<10;i++)
-	{
-		auto t1 = readTSC();
-		kernel.run(width*height,img.data());
-		auto t2 = readTSC();
-		std::cout<<(t2-t1)/(width*height)<<" cycles per pixel"<<std::endl;
-	}
-	// create string
-	stringstream sstr;
-	sstr << "P3" << endl << width << " " << height << endl << 255 << endl;
-	for (size_t i = 0; i < height; i++)
-	{
-		for (size_t j = 0; j < width; j++)
-		{
-			sstr << img[j+i*width] << " 0 0" << endl;
-		}
-	}
-
-	// write to file at once
-	ofstream fout;
-	fout.open("mandelbrot.ppm");
-	if (fout.is_open())
-	{
-		cout << "File is opened!" << endl;
-		fout << sstr.str();
-		fout.close();
-	}
-	else
-	{
-		cout << "Could not open the file!" << endl;
-	}
+	},Vectorization::KernelArgs<char*>{});
+	std::vector<char> image(width*height);
+	kernel.run(width*height,image.data());
+  return image;
 }
+
+
+#ifdef _MSC_VER
+# include <intrin.h>
+#else
+# include <x86intrin.h>
+#endif
+
+// optional wrapper if you don't want to just use __rdtsc() everywhere
+inline
+uint64_t readTSC() {
+    // _mm_lfence();  // optionally wait for earlier insns to retire before reading the clock
+    uint64_t tsc = __rdtsc();
+    // _mm_lfence();  // optionally block later instructions until rdtsc retires
+    return tsc;
+}
+
+int main() {
+  std::vector<char> image;
+  for(int i = 0;i<10;i++)
+  {
+    auto t1 = readTSC();
+    image = Mandelbrot();
+    auto t2 = readTSC();
+    std::cout << (t2 - t1)/(width*height) << " cycles per pixel" << std::endl;
+  }
+  // write to file at once
+  std::ofstream fout;
+  fout.open("mandelbrot.ppm");
+  if (fout.is_open()) {
+    fout << "P5\n" << width << ' ' << height << " 255\n";
+    for(int i=0;i<width*height;i++)
+    {
+        fout << image[i];
+    }
+    fout.close();
+  } else {
+    std::cout << "Could not open the file!\n";
+  }
+
+  return 0;
+}
+
+
 
 ```
 

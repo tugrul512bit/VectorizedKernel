@@ -475,6 +475,7 @@ namespace Vectorization
 			}
 		}
 
+
 		// this function is not accelerated. use it sparsely.
 		inline void log(KernelData<Type,Simd> & result) const noexcept
 		{
@@ -490,6 +491,47 @@ namespace Vectorization
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::log2(data[i]);
+			}
+		}
+
+
+		inline void bitwiseXor(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] ^ vec.data[i];
+			}
+		}
+
+		inline void bitwiseAnd(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] & vec.data[i];
+			}
+		}
+
+		inline void bitwiseOr(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i] | vec.data[i];
+			}
+		}
+
+		inline void bitwiseNot(KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = ~data[i];
+			}
+		}
+
+		inline void logicalNot(KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = !data[i];
 			}
 		}
 	};

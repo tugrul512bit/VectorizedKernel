@@ -73,7 +73,6 @@ Mandelbrot generation sample that has more than 10x speedup (compared to scalar 
 - Godbolt.org AVX512 server single thread (simd=32): 19 cycles per pixel (-std=c++2a -O3 -march=cascadelake -mavx512f -mavx512bw -mprefer-vector-width=512  -ftree-vectorize -fno-math-errno) (less than 10 ms per 1000x1000 image)
 
 ```C++
-// 22 cycles per pixel mandelbrot (cascadelake)
 #include <algorithm>
 #include <complex>
 #include <cstdint>
@@ -84,20 +83,24 @@ Mandelbrot generation sample that has more than 10x speedup (compared to scalar 
 #include"VectorizedKernel.h"
 
 
+
+
 constexpr int width = 2000;
 constexpr int height = 2000;
 constexpr int simd = 32;
 
-std::vector<char> Mandelbrot() {
+void Mandelbrot(std::vector<char> & image) {
 
 	auto kernel = Vectorization::createKernel<simd>([&](auto & factory, auto & idThread, char * img){
+        const int currentSimdWidth = factory.width; // simd on aligned-body, 1 on non-aligned tail
+
 		auto j = factory.template generate<int>();
 		idThread.modulus(width, j);
 
 		auto i = factory.template generate<int>();
 		idThread.div(width, i);
 
-		const int vecWidth = factory.width;
+
 
 		auto x0 = factory.template generate<float>();
 		j.template castAndCopyTo<float>(x0);
@@ -144,7 +147,7 @@ std::vector<char> Mandelbrot() {
 		{
 
 			// computing while loop condition start
-            		imagz.mul(imagz, imagzSquared);
+            imagz.mul(imagz, imagzSquared);
 			realz.fusedMultiplyAdd(realz,imagzSquared,tmp1);
 			tmp1.lessThan(4.0f, absLessThan2);
 
@@ -189,9 +192,9 @@ std::vector<char> Mandelbrot() {
 		returnValueChar.writeTo(img,writeAddr);
 
 	},Vectorization::KernelArgs<char*>{});
-	std::vector<char> image(width*height);
+    if(image.size()<width*height)
+	    image.resize(width*height);
 	kernel.run(width*height,image.data());
-  return image;
 }
 
 
@@ -212,10 +215,10 @@ uint64_t readTSC() {
 
 int main() {
   std::vector<char> image;
-  for(int i = 0;i<10;i++)
+  for(int i = 0;i<100;i++)
   {
     auto t1 = readTSC();
-    image = Mandelbrot();
+    Mandelbrot(image);
     auto t2 = readTSC();
     std::cout << (t2 - t1)/(width*height) << " cycles per pixel" << std::endl;
   }
@@ -235,8 +238,6 @@ int main() {
 
   return 0;
 }
-
-
 
 ```
 

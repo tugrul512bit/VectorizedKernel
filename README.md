@@ -78,12 +78,7 @@ Mandelbrot generation sample that has more than 10x speedup (compared to scalar 
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-
-
 #include"VectorizedKernel.h"
-
-
-
 
 constexpr int width = 2000;
 constexpr int height = 2000;
@@ -99,8 +94,6 @@ void Mandelbrot(std::vector<char> & image) {
 
 		auto i = factory.template generate<int>();
 		idThread.div(width, i);
-
-
 
 		auto x0 = factory.template generate<float>();
 		j.template castAndCopyTo<float>(x0);
@@ -147,7 +140,7 @@ void Mandelbrot(std::vector<char> & image) {
 		{
 
 			// computing while loop condition start
-            imagz.mul(imagz, imagzSquared);
+            		imagz.mul(imagz, imagzSquared);
 			realz.fusedMultiplyAdd(realz,imagzSquared,tmp1);
 			tmp1.lessThan(4.0f, absLessThan2);
 

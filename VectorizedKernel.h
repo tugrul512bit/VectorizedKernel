@@ -283,26 +283,24 @@ namespace Vectorization
 
 		inline bool areAllTrue() const noexcept
 		{
-			bool result = true;
+			int result = 0;
 
 
 			for(int i=0;i<Simd;i++)
 			{
-				result = result && data[i];
+				result = result + (data[i]>0);
 			}
-			return result;
+			return result==Simd;
 		}
 
 		inline bool isAnyTrue() const noexcept
 		{
-			bool result = false;
-
-
+			int result = 0;
 			for(int i=0;i<Simd;i++)
 			{
-				result = result || data[i];
+				result = result + (data[i]>0);
 			}
-			return result;
+			return result>0;
 		}
 
 		template<typename ComparedType>
@@ -657,6 +655,64 @@ namespace Vectorization
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = !data[i];
+			}
+		}
+
+
+		inline void factorial(KernelData<Type,Simd> & result) const noexcept
+		{
+			alignas(32)
+			Type tmpC[Simd];
+			alignas(32)
+			Type tmpD[Simd];
+			alignas(32)
+            Type tmpE[Simd];
+			for(int i=0;i<Simd;i++)
+			{
+				tmpC[i]=data[i];
+			}
+			for(int i=0;i<Simd;i++)
+			{
+				tmpD[i]=data[i]-(Type)1;
+			}
+			int mask[Simd];
+
+
+			int anyWorking = true;
+			while(anyWorking)
+			{
+				anyWorking = false;
+
+				for(int i=0;i<Simd;i++)
+				{
+					mask[i] = (tmpD[i]>0);
+				}
+
+				for(int i=0;i<Simd;i++)
+				{
+					anyWorking += mask[i];
+				}
+
+				for(int i=0;i<Simd;i++)
+				{
+					tmpE[i] =  tmpC[i] * tmpD[i];
+				}
+
+				for(int i=0;i<Simd;i++)
+				{
+					tmpC[i] = mask[i] ? tmpE[i] : tmpC[i];
+				}
+
+				for(int i=0;i<Simd;i++)
+				{
+					tmpD[i]--;
+				}
+
+			}
+
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = tmpC[i]?tmpC[i]:1;
 			}
 		}
 	};

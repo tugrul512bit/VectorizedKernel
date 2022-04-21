@@ -144,7 +144,7 @@ std::vector<char> Mandelbrot() {
 		{
 
 			// computing while loop condition start
-            imagz.mul(imagz, imagzSquared);
+            		imagz.mul(imagz, imagzSquared);
 			realz.fusedMultiplyAdd(realz,imagzSquared,tmp1);
 			tmp1.lessThan(4.0f, absLessThan2);
 

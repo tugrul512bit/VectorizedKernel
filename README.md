@@ -74,7 +74,6 @@ Mandelbrot generation sample that has more than 10x speedup (compared to scalar 
 
 ```C++
 #include <algorithm>
-#include <complex>
 #include <cstdint>
 #include <fstream>
 #include <iostream>

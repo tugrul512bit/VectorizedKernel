@@ -149,7 +149,8 @@ namespace Vectorization
 
 			for(int i=0;i<Simd;i++)
 			{
-				ptr[i] = mask.data[i]?data[i]:ptr[i];
+				if(mask.data[i])
+						ptr[i] = data[i];
 			}
 		}
 
@@ -171,7 +172,8 @@ namespace Vectorization
 
 			for(int i=0;i<Simd;i++)
 			{
-				ptr[id.data[i]] = mask.data[i]?data[i]:ptr[id.data[i]];
+				if(mask.data[i])
+					ptr[id.data[i]] = data[i];
 			}
 		}
 
@@ -195,7 +197,8 @@ namespace Vectorization
 			const int idx = id.data[0];
 			for(int i=0;i<Simd;i++)
 			{
-				ptr[idx+i] = mask.data[i]?data[i]:ptr[idx+i];
+				if(mask.data[i])
+					ptr[idx+i] = data[i];
 			}
 		}
 

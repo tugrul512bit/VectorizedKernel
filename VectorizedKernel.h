@@ -438,6 +438,100 @@ namespace Vectorization
 			}
 		}
 
+		// gets value from a so-called thread (a lane) in the current SIMD
+		// for main body of kernel launch, lane must not overflow Simd
+		// for the tail the number of lanes is 1 so the only available lane is 0 that is itself
+		// lane value[i] = lane value [id.data[i]]
+		// this is a gather operation within the SIMD unit
+		template<typename IntegerType>
+		inline void gatherFromLane(const KernelData<IntegerType,Simd> & id, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[id.data[i]];
+			}
+		}
+
+		// shifts lanes (wraps around) left n times out-of-place
+		// writes result to another result variable
+		template<typename IntegerType>
+		inline void lanesLeftShift(const IntegerType & n, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				const int j = (i+n)&(Simd-1);
+				result.data[i] = data[j];
+			}
+		}
+
+		// shifts lanes (wraps around) right n times out-of-place
+		// writes result to another result variable
+		template<typename IntegerType>
+		inline void lanesRightShift(const IntegerType & n, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				const int j = (i+2*Simd-n)&(Simd-1);
+				result.data[i] = data[j];
+			}
+		}
+
+		// shifts lanes (wraps around) left n times in-place
+		template<typename IntegerType>
+		inline void lanesLeftShift(const IntegerType & n) const noexcept
+		{
+			alignas(32)
+			Type tmp[Simd];
+			for(int i=0;i<Simd;i++)
+			{
+				tmp[i] = data[i];
+			}
+			for(int i=0;i<Simd;i++)
+			{
+				const int j = (i+n)&(Simd-1);
+				data[i] = tmp[j];
+			}
+		}
+
+		// shifts lanes (wraps around) left n times in-place
+		template<typename IntegerType>
+		inline void lanesRightShift(const IntegerType & n) const noexcept
+		{
+			alignas(32)
+			Type tmp[Simd];
+			for(int i=0;i<Simd;i++)
+			{
+				tmp[i] = data[i];
+			}
+			for(int i=0;i<Simd;i++)
+			{
+				const int j = (i+2*Simd-n)&(Simd-1);
+				data[i] = tmp[j];
+			}
+		}
+
+		// gets value from a so-called thread in the current SIMD
+		// for main body of kernel launch, lane must not overflow Simd
+		// for the tail the number of lanes is 1 so the only available lane is 0 that is itself
+		inline void broadcastFromLane(const int lane) noexcept
+		{
+            const Type bcast = data[lane];
+			for(int i=0;i<Simd;i++)
+			{
+				data[i] = bcast;
+			}
+		}
+
+		// same as broadcastFromLane(lane) but the target to copy is a result vector
+		inline void broadcastFromLaneToVector(const int lane, KernelData<Type,Simd> & result) noexcept
+		{
+            const Type bcast = data[lane];
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = bcast;
+			}
+		}
+
 		inline void readFrom(const KernelData<Type,Simd> & vec) noexcept
 		{
 			for(int i=0;i<Simd;i++)
@@ -454,6 +548,17 @@ namespace Vectorization
 				result.data[i] = (NewType)data[i];
 			}
 		}
+
+		template<typename NewType>
+		inline void castBitwiseAndCopyTo(KernelData<NewType,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = *reinterpret_cast<const NewType*>(&data[i]);
+			}
+		}
+
+
 
 		inline  void sqrt(KernelData<Type,Simd> & result) const noexcept
 		{

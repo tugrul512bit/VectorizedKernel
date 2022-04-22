@@ -119,6 +119,18 @@ namespace Vectorization
 			}
 		}
 
+	    // contiguous read element by element starting from beginning of ptr
+		// masked read operation: if mask lane is set then read. if not set then don't read
+		template<typename TypeMask>
+		inline void readFromMasked(const Type * const __restrict__ ptr, const KernelData<TypeMask,Simd> & mask) noexcept
+		{
+
+			for(int i=0;i<Simd;i++)
+			{
+				data[i] = mask.data[i]?ptr[i]:data[i];
+			}
+		}
+
 		// contiguous write element by element starting from beginning of ptr
 		inline void writeTo(Type * const __restrict__ ptr) const noexcept
 		{
@@ -129,6 +141,18 @@ namespace Vectorization
 			}
 		}
 
+		// contiguous write element by element starting from beginning of ptr
+		// masked write: if mask lane is set then write, if not set then don't write
+		template<typename TypeMask>
+		inline void writeToMasked(Type * const __restrict__ ptr, const KernelData<TypeMask,Simd> & mask) const noexcept
+		{
+
+			for(int i=0;i<Simd;i++)
+			{
+				ptr[i] = mask.data[i]?data[i]:ptr[i];
+			}
+		}
+
 		// does scatter operation (every element writes its own targeted ptr element, decided by elements of id)
 		inline void writeTo(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) const noexcept
 		{
@@ -136,6 +160,18 @@ namespace Vectorization
 			for(int i=0;i<Simd;i++)
 			{
 				ptr[id.data[i]] = data[i];
+			}
+		}
+
+		// does scatter operation (every element writes its own targeted ptr element, decided by elements of id)
+		// masked write: if mask lane is set then write, if not set then don't write
+		template<typename TypeMask>
+		inline void writeToMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) const noexcept
+		{
+
+			for(int i=0;i<Simd;i++)
+			{
+				ptr[id.data[i]] = mask.data[i]?data[i]:ptr[id.data[i]];
 			}
 		}
 
@@ -150,6 +186,19 @@ namespace Vectorization
 			}
 		}
 
+		// uses only first item of id to compute the starting point of target ptr element.
+		// writes Simd number of elements to target starting from ptr + id.data[0]
+		// masked write: if mask lane is set then writes, if not set then does not write
+		template<typename TypeMask>
+		inline void writeToContiguousMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) const noexcept
+		{
+			const int idx = id.data[0];
+			for(int i=0;i<Simd;i++)
+			{
+				ptr[idx+i] = mask.data[i]?data[i]:ptr[idx+i];
+			}
+		}
+
 		// does gather operation (every element reads its own sourced ptr element, decided by elements of id)
 		inline void readFrom(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) noexcept
 		{
@@ -157,6 +206,18 @@ namespace Vectorization
 			for(int i=0;i<Simd;i++)
 			{
 				 data[i] = ptr[id.data[i]];
+			}
+		}
+
+		// does gather operation (every element reads its own sourced ptr element, decided by elements of id)
+		// masked operation: if mask lane is set, then it reads from pointer+id.data[i], if not set then it does not read anything
+		template<typename TypeMask>
+		inline void readFromMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) noexcept
+		{
+
+			for(int i=0;i<Simd;i++)
+			{
+				 data[i] = mask.data[i]?ptr[id.data[i]]:data[i];
 			}
 		}
 
@@ -171,6 +232,19 @@ namespace Vectorization
 			}
 		}
 
+		// uses only first item of id to compute the starting point of source ptr element.
+		// reads Simd number of elements from target starting from ptr + id.data[0]
+		// masked operation: if mask lane is set, then it reads from pointer+id.data[0], if not set then it does not read anything
+		template<typename TypeMask>
+		inline void readFromContiguousMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) noexcept
+		{
+			const int idx = id.data[0];
+			for(int i=0;i<Simd;i++)
+			{
+				data[i] = mask.data[i]?ptr[idx+i]:data[i];
+			}
+		}
+
 		template<typename F>
 		inline void idCompute(const int id, const F & f) noexcept
 		{
@@ -182,7 +256,8 @@ namespace Vectorization
 		}
 
 		// bool
-		inline void lessThan(const KernelData<Type,Simd> & vec, KernelData<int,Simd> & result) const noexcept
+        template<typename TypeMask>
+		inline void lessThan(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -190,8 +265,11 @@ namespace Vectorization
 			}
 		}
 
+
+
 		// bool
-		inline void lessThanOrEquals(const KernelData<Type,Simd> & vec, KernelData<int,Simd> & result) const noexcept
+        template<typename TypeMask>
+		inline void lessThanOrEquals(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -200,7 +278,8 @@ namespace Vectorization
 		}
 
 		// bool
-		inline void lessThanOrEquals(const Type val, KernelData<int,Simd> & result) const noexcept
+        template<typename TypeMask>
+		inline void lessThanOrEquals(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -209,7 +288,8 @@ namespace Vectorization
 		}
 
 		// bool
-		inline void greaterThan(const KernelData<Type,Simd> & vec, KernelData<int,Simd> & result) const noexcept
+         template<typename TypeMask>
+		inline void greaterThan(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -218,7 +298,8 @@ namespace Vectorization
 		}
 
 		// bool
-		inline void greaterThan(const Type val, KernelData<int,Simd> & result) const noexcept
+        template<typename TypeMask>
+		inline void greaterThan(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -227,7 +308,8 @@ namespace Vectorization
 		}
 
 		// bool
-		inline void equals(const KernelData<Type,Simd> & vec, KernelData<int,Simd> & result) const noexcept
+        template<typename TypeMask>
+		inline void equals(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -236,7 +318,8 @@ namespace Vectorization
 		}
 
 		// bool
-		inline void equals(const Type val, KernelData<int,Simd> & result) const noexcept
+        template<typename TypeMask>
+		inline void equals(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -245,7 +328,8 @@ namespace Vectorization
 		}
 
 		// bool
-		inline void notEqual(const KernelData<Type,Simd> & vec, KernelData<int,Simd> & result) const noexcept
+        template<typename TypeMask>
+		inline void notEqual(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -254,7 +338,8 @@ namespace Vectorization
 		}
 
 		// bool
-		inline  void notEqual(const Type val, KernelData<int,Simd> & result) const noexcept
+        template<typename TypeMask>
+		inline  void notEqual(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -264,7 +349,8 @@ namespace Vectorization
 
 
 		// bool
-		inline  void logicalAnd(const KernelData<int,Simd> vec, KernelData<int,Simd> & result) const noexcept
+        template<typename TypeMask>
+		inline  void logicalAnd(const KernelData<TypeMask,Simd> vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -273,7 +359,8 @@ namespace Vectorization
 		}
 
 		// bool
-		inline void logicalOr(const KernelData<int,Simd> vec, KernelData<int,Simd> & result) const noexcept
+        template<typename TypeMask>
+		inline void logicalOr(const KernelData<TypeMask,Simd> vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -309,6 +396,24 @@ namespace Vectorization
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]?vec1.data[i]:vec2.data[i];
+			}
+		}
+
+		template<typename ComparedType>
+		inline void ternary(const ComparedType val1, const KernelData<ComparedType,Simd> vec2, KernelData<ComparedType,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i]?val1:vec2.data[i];
+			}
+		}
+
+		template<typename ComparedType>
+		inline void ternary(const KernelData<ComparedType,Simd> vec1, const ComparedType val2, KernelData<ComparedType,Simd> & result) const noexcept
+		{
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = data[i]?vec1.data[i]:val2;
 			}
 		}
 

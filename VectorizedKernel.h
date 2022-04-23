@@ -438,6 +438,7 @@ namespace Vectorization
 			}
 		}
 
+		// in-place operation so the result variable must be different than current variable
 		// gets value from a so-called thread (a lane) in the current SIMD
 		// for main body of kernel launch, lane must not overflow Simd
 		// for the tail the number of lanes is 1 so the only available lane is 0 that is itself
@@ -452,6 +453,17 @@ namespace Vectorization
 			}
 		}
 
+		// similar to gatherFromLane but with constant index values for faster operation
+		inline void transposeLanes(const int widthTranspose, KernelData<Type,Simd> & result) const noexcept
+		{
+			for(int i=0;i<widthTranspose;i++)
+				for(int j=0;j<widthTranspose;j++)
+			{
+				result.data[i*widthTranspose+j] = data[j*widthTranspose+i];
+			}
+		}
+
+		// in-place operation so the result variable must be different than current variable
 		// shifts lanes (wraps around) left n times out-of-place
 		// writes result to another result variable
 		template<typename IntegerType>
@@ -464,8 +476,10 @@ namespace Vectorization
 			}
 		}
 
+		// in-place operation so the result variable must be different than current variable
 		// shifts lanes (wraps around) right n times out-of-place
 		// writes result to another result variable
+		// n must not be greater than Simd*2
 		template<typename IntegerType>
 		inline void lanesRightShift(const IntegerType & n, KernelData<Type,Simd> & result) const noexcept
 		{
@@ -494,6 +508,7 @@ namespace Vectorization
 		}
 
 		// shifts lanes (wraps around) left n times in-place
+		// n must not be greater than Simd*2
 		template<typename IntegerType>
 		inline void lanesRightShift(const IntegerType & n) const noexcept
 		{

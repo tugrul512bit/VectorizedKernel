@@ -889,11 +889,11 @@ namespace Vectorization
 
 		inline void factorial(KernelData<Type,Simd> & result) const noexcept
 		{
-			alignas(32)
+			alignas(64)
 			Type tmpC[Simd];
-			alignas(32)
+			alignas(64)
 			Type tmpD[Simd];
-			alignas(32)
+			alignas(64)
             Type tmpE[Simd];
 			for(int i=0;i<Simd;i++)
 			{
@@ -946,11 +946,21 @@ namespace Vectorization
 	};
 
 
+	template<typename Type,int Simd,int ArraySize>
+	struct KernelDataArray
+	{
+		KernelData<Type,Simd> arr[ArraySize];
+		KernelData<Type,Simd> & operator[](const int index)
+		{
+			return arr[index];
+		}
+	};
 
-	template<int mask>
+
+	template<int CurrentSimd>
 	struct KernelDataFactory
 	{
-		KernelDataFactory():width(mask)
+		KernelDataFactory():width(CurrentSimd)
 		{
 
 		}
@@ -958,26 +968,29 @@ namespace Vectorization
 
 		template<typename Type>
 		inline
-		KernelData<Type,mask> generate() const
+		KernelData<Type,CurrentSimd> generate() const
 		{
-			return KernelData<Type,mask>();
+			return KernelData<Type,CurrentSimd>();
 		}
 
 
 		template<typename Type>
 		inline
-		KernelData<Type,mask> generate(const KernelData<Type,mask> & vec) const
+		KernelData<Type,CurrentSimd> generate(const KernelData<Type,CurrentSimd> & vec) const
 		{
-			return KernelData<Type,mask>(vec);
+			return KernelData<Type,CurrentSimd>(vec);
 		}
 
 
-		template<typename Type>
+		// size has to be compile-time known otherwise it won't work
+		template<typename Type,int Size>
 		inline
-		KernelData<Type,mask> generate(const Type & val) const
+		KernelDataArray<Type,CurrentSimd,Size> generateArray() const
 		{
-			return KernelData<Type,mask>(val);
+			return KernelDataArray<Type,CurrentSimd,Size>();
 		}
+
+
 		const int width;
 	};
 

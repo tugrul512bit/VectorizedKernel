@@ -50,7 +50,7 @@ namespace Vectorization
 	struct KernelData
 	{
 
-		alignas(64)
+		alignas(32)
 		Type data[Simd];
 
 
@@ -640,7 +640,7 @@ namespace Vectorization
 		{
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = std::fma(data[i], vec1.data[i], vec2.data[i]);
+				result.data[i] = (data[i]* vec1.data[i]+ vec2.data[i]);
 			}
 		}
 
@@ -648,7 +648,7 @@ namespace Vectorization
 		{
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = std::fma(data[i], vec1.data[i], val2);
+				result.data[i] = (data[i]* vec1.data[i]+ val2);
 			}
 		}
 
@@ -656,7 +656,7 @@ namespace Vectorization
 		{
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = std::fma(data[i], val1, vec2.data[i]);
+				result.data[i] = (data[i]* val1+ vec2.data[i]);
 			}
 		}
 
@@ -664,7 +664,7 @@ namespace Vectorization
 		{
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = std::fma(data[i], val1, val2);
+				result.data[i] = (data[i]* val1+ val2);
 			}
 		}
 
@@ -672,7 +672,7 @@ namespace Vectorization
 		{
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = std::fma(data[i], vec1.data[i], -vec2.data[i]);
+				result.data[i] = (data[i]* vec1.data[i] -vec2.data[i]);
 			}
 		}
 
@@ -680,7 +680,7 @@ namespace Vectorization
 		{
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = std::fma(data[i], val1, -vec2.data[i]);
+				result.data[i] = (data[i]* val1 -vec2.data[i]);
 			}
 		}
 
@@ -688,7 +688,7 @@ namespace Vectorization
 		{
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = std::fma(data[i], vec1.data[i], -val2);
+				result.data[i] = (data[i]* vec1.data[i] -val2);
 			}
 		}
 
@@ -696,7 +696,7 @@ namespace Vectorization
 		{
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = std::fma(data[i], val1, -val2);
+				result.data[i] = (data[i]* val1 -val2);
 			}
 		}
 

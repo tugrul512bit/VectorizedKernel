@@ -1,6 +1,12 @@
 # VectorizedKernel
 Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX/AVX512 SIMD microarchitectures without any platform-dependency but a C++14 compiler.
 
+What does it need?
+- C++14 compiler
+- Auto-vectorization of compiler
+- Auto-vectorization flags ```-std=c++14 -O3 -march=cascadelake -mavx512f -mavx512bw -mprefer-vector-width=512 -ftree-vectorize -fno-math-errno```
+- Or SSE/AVX2 versions if AVX512 is not supported by CPU
+
 How does it work?
 
 - User writes scalar-looking code (see below sample)

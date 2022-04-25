@@ -1,5 +1,5 @@
 # VectorizedKernel
-Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX/AVX512 SIMD microarchitectures without any platform-dependency but a C++14 compiler.
+Running GPGPU kernels on CPU with auto-vectorization for SSE/AVX/AVX512 SIMD microarchitectures without any platform-dependency but a C++14 compiler that has auto-vectorization for arrays of lengths 4/8/16/32/64.
 
 What does it need?
 - C++14 compiler

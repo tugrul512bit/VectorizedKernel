@@ -15,7 +15,7 @@
 #include <functional>
 #include <cmath>
 #include <chrono>
-
+#include <thread>
 
 namespace Vectorization
 {
@@ -1024,6 +1024,69 @@ namespace Vectorization
 
 
 
+			if((n/SimdWidth)*SimdWidth != n)
+			{
+				const KernelDataFactory<1> factoryLast;
+
+				const int m = n%SimdWidth;
+				auto id = factoryLast.template generate<int>();
+				for(int i=0;i<m;i++)
+				{
+
+					id.idCompute(nLoop*SimdWidth+i,[](const int prm){ return prm;});
+					kernel(factoryLast, id, args...);
+				}
+			}
+		}
+
+		template<int numThreads>
+		void runMultithreaded(int n, Args... args)
+		{
+			const int nLoop = (n/SimdWidth);
+			const KernelDataFactory<SimdWidth> factory;
+
+
+#ifdef _OPENMP
+#include<omp.h>
+			// distribute to threads by openmp
+			#pragma omp parallel for num_threads(numThreads)
+			for(int i=0;i<nLoop;i++)
+			{
+				auto id = factory.template generate<int>();
+				id.idCompute(i*SimdWidth,[](const int prm){ return prm;});
+				kernel(factory, id, args...);
+			}
+#else
+			// simple work scheduling. todo: do load-balance with core affinity + dedicated thread
+			std::vector<std::thread> threads;
+			const int nChunk = numThreads>0?(1 + nLoop/numThreads):nLoop; // each thread is like simd*100 GPU threads
+			for(int ii=0;ii<nLoop;ii+=nChunk)
+			{
+				threads.emplace_back([&,ii](){
+					for(int j=0;j<nChunk;j++)
+					{
+						const int i = ii+j;
+						if(i>=nLoop)
+							break;
+
+						auto id = factory.template generate<int>();
+						id.idCompute(i*SimdWidth,[](const int prm){ return prm;});
+						kernel(factory, id, args...);
+					}
+				});
+			}
+
+			for(int i=0;i<threads.size();i++)
+			{
+				threads[i].join(); // this is a synchronization point for the data changes
+			}
+
+#endif
+
+
+
+
+			// then do the tail computation serially (assume simd is not half of a big work)
 			if((n/SimdWidth)*SimdWidth != n)
 			{
 				const KernelDataFactory<1> factoryLast;

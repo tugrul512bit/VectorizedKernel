@@ -126,7 +126,7 @@ void Mandelbrot(std::vector<char> & image) {
 		// loop
 		bool anyTrue = true;
 		auto iteration = factory.template generate<int>(0);
-		const auto iterationLimit = factory.template generate<int>(35);
+		
 
 		// allocate all re-used resources
 		auto imagzSquared = factory.template generate<float>();

@@ -9,7 +9,7 @@
 #define VECTORIZEDKERNEL_H_
 
 
-
+#include <vector>
 #include <iostream>
 #include <string>
 #include <functional>

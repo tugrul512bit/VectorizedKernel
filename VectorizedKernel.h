@@ -50,8 +50,13 @@ namespace Vectorization
 	struct KernelData
 	{
 
-		alignas(32)
+#ifdef ENABLE_GNU_VECTOR_EXTENTION
+		typedef Type Data __attribute__ ((__vector_size__ (Simd*sizeof(Type)), __may_alias__));
+		Data data;
+#else
+		alignas(64)
 		Type data[Simd];
+#endif
 
 
 
@@ -494,7 +499,7 @@ namespace Vectorization
 		template<typename IntegerType>
 		inline void lanesLeftShift(const IntegerType & n) const noexcept
 		{
-			alignas(32)
+			alignas(64)
 			Type tmp[Simd];
 			for(int i=0;i<Simd;i++)
 			{
@@ -512,7 +517,7 @@ namespace Vectorization
 		template<typename IntegerType>
 		inline void lanesRightShift(const IntegerType & n) const noexcept
 		{
-			alignas(32)
+			alignas(64)
 			Type tmp[Simd];
 			for(int i=0;i<Simd;i++)
 			{

@@ -50,13 +50,10 @@ namespace Vectorization
 	struct KernelData
 	{
 
-#ifdef ENABLE_GNU_VECTOR_EXTENTION
-		typedef Type Data __attribute__ ((__vector_size__ (Simd*sizeof(Type)), __may_alias__));
-		Data data;
-#else
+
 		alignas(64)
 		Type data[Simd];
-#endif
+
 
 
 

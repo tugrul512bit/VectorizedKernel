@@ -20,6 +20,24 @@
 namespace Vectorization
 {
 
+#if defined(__INTEL_COMPILER)
+
+#define VECTORIZED_KERNEL_METHOD __attribute__((always_inline)) inline
+
+#elif defined(__clang__)
+
+#define VECTORIZED_KERNEL_METHOD __attribute__((always_inline)) inline
+
+#elif defined(__GNUC__) || defined(__GNUG__)
+
+#define VECTORIZED_KERNEL_METHOD __attribute__((always_inline)) inline
+
+#elif defined(_MSC_VER)
+
+#define VECTORIZED_KERNEL_METHOD __declspec(inline) inline
+
+#endif
+
 	class Bench
 	{
 	public:
@@ -56,10 +74,10 @@ namespace Vectorization
 
 
 
-		__attribute__((always_inline))
+		VECTORIZED_KERNEL_METHOD
 		KernelData(){}
 
-		__attribute__((always_inline))
+		VECTORIZED_KERNEL_METHOD
 		KernelData(const Type & broadcastedInit) noexcept
 		{
 
@@ -69,7 +87,7 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
+		VECTORIZED_KERNEL_METHOD
 		KernelData(const KernelData<Type,Simd> & vectorizedIit) noexcept
 		{
 
@@ -79,7 +97,7 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
+		VECTORIZED_KERNEL_METHOD
 		KernelData(KernelData&& dat){
 
 			for(int i=0;i<Simd;i++)
@@ -88,7 +106,7 @@ namespace Vectorization
 			}
 	    }
 
-		__attribute__((always_inline))
+		VECTORIZED_KERNEL_METHOD
 		KernelData& operator=(const KernelData& dat){
 
 			for(int i=0;i<Simd;i++)
@@ -98,7 +116,7 @@ namespace Vectorization
 	        return *this;
 	    };
 
-		__attribute__((always_inline))
+		VECTORIZED_KERNEL_METHOD
 		KernelData& operator=(KernelData&& dat){
 
 			for(int i=0;i<Simd;i++)
@@ -109,20 +127,20 @@ namespace Vectorization
 
 	    };
 
-		__attribute__((always_inline))
+		VECTORIZED_KERNEL_METHOD
 	    ~KernelData(){
 
 	    };
 
-		__attribute__((always_inline))
-		inline KernelData<Type,Simd> & assign()
+		VECTORIZED_KERNEL_METHOD
+		KernelData<Type,Simd> & assign()
 		{
 	    	return *this;
 		}
 
 	    // contiguous read element by element starting from beginning of ptr
-		__attribute__((always_inline))
-		inline void readFrom(const Type * const __restrict__ ptr) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void readFrom(const Type * const __restrict__ ptr) noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -134,8 +152,8 @@ namespace Vectorization
 	    // contiguous read element by element starting from beginning of ptr
 		// masked read operation: if mask lane is set then read. if not set then don't read
 		template<typename TypeMask>
-		__attribute__((always_inline))
-		inline void readFromMasked(const Type * const __restrict__ ptr, const KernelData<TypeMask,Simd> & mask) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void readFromMasked(const Type * const __restrict__ ptr, const KernelData<TypeMask,Simd> & mask) noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -145,8 +163,8 @@ namespace Vectorization
 		}
 
 		// contiguous write element by element starting from beginning of ptr
-		__attribute__((always_inline))
-		inline void writeTo(Type * const __restrict__ ptr) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void writeTo(Type * const __restrict__ ptr) const noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -158,8 +176,8 @@ namespace Vectorization
 		// contiguous write element by element starting from beginning of ptr
 		// masked write: if mask lane is set then write, if not set then don't write
 		template<typename TypeMask>
-		__attribute__((always_inline))
-		inline void writeToMasked(Type * const __restrict__ ptr, const KernelData<TypeMask,Simd> & mask) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void writeToMasked(Type * const __restrict__ ptr, const KernelData<TypeMask,Simd> & mask) const noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -170,8 +188,8 @@ namespace Vectorization
 		}
 
 		// does scatter operation (every element writes its own targeted ptr element, decided by elements of id)
-		__attribute__((always_inline))
-		inline void writeTo(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void writeTo(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) const noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -183,8 +201,8 @@ namespace Vectorization
 		// does scatter operation (every element writes its own targeted ptr element, decided by elements of id)
 		// masked write: if mask lane is set then write, if not set then don't write
 		template<typename TypeMask>
-		__attribute__((always_inline))
-		inline void writeToMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void writeToMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) const noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -196,8 +214,8 @@ namespace Vectorization
 
 		// uses only first item of id to compute the starting point of target ptr element.
 		// writes Simd number of elements to target starting from ptr + id.data[0]
-		__attribute__((always_inline))
-		inline void writeToContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void writeToContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) const noexcept
 		{
 			const int idx = id.data[0];
 			for(int i=0;i<Simd;i++)
@@ -210,8 +228,8 @@ namespace Vectorization
 		// writes Simd number of elements to target starting from ptr + id.data[0]
 		// masked write: if mask lane is set then writes, if not set then does not write
 		template<typename TypeMask>
-		__attribute__((always_inline))
-		inline void writeToContiguousMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void writeToContiguousMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) const noexcept
 		{
 			const int idx = id.data[0];
 			for(int i=0;i<Simd;i++)
@@ -222,8 +240,8 @@ namespace Vectorization
 		}
 
 		// does gather operation (every element reads its own sourced ptr element, decided by elements of id)
-		__attribute__((always_inline))
-		inline void readFrom(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void readFrom(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -235,8 +253,8 @@ namespace Vectorization
 		// does gather operation (every element reads its own sourced ptr element, decided by elements of id)
 		// masked operation: if mask lane is set, then it reads from pointer+id.data[i], if not set then it does not read anything
 		template<typename TypeMask>
-		__attribute__((always_inline))
-		inline void readFromMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void readFromMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -247,8 +265,8 @@ namespace Vectorization
 
 		// uses only first item of id to compute the starting point of source ptr element.
 		// reads Simd number of elements from target starting from ptr + id.data[0]
-		__attribute__((always_inline))
-		inline void readFromContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void readFromContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) noexcept
 		{
 			const int idx = id.data[0];
 			for(int i=0;i<Simd;i++)
@@ -261,8 +279,8 @@ namespace Vectorization
 		// reads Simd number of elements from target starting from ptr + id.data[0]
 		// masked operation: if mask lane is set, then it reads from pointer+id.data[0], if not set then it does not read anything
 		template<typename TypeMask>
-		__attribute__((always_inline))
-		inline void readFromContiguousMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void readFromContiguousMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) noexcept
 		{
 			const int idx = id.data[0];
 			for(int i=0;i<Simd;i++)
@@ -272,8 +290,8 @@ namespace Vectorization
 		}
 
 		template<typename F>
-		__attribute__((always_inline))
-		inline void idCompute(const int id, const F & f) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void idCompute(const int id, const F & f) noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -284,8 +302,8 @@ namespace Vectorization
 
 		// bool
         template<typename TypeMask>
-        __attribute__((always_inline))
-		inline void lessThan(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
+        VECTORIZED_KERNEL_METHOD
+		void lessThan(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -297,8 +315,8 @@ namespace Vectorization
 
 		// bool
         template<typename TypeMask>
-        __attribute__((always_inline))
-		inline void lessThanOrEquals(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
+        VECTORIZED_KERNEL_METHOD
+		void lessThanOrEquals(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -308,8 +326,8 @@ namespace Vectorization
 
 		// bool
         template<typename TypeMask>
-        __attribute__((always_inline))
-		inline void lessThanOrEquals(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
+        VECTORIZED_KERNEL_METHOD
+		void lessThanOrEquals(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -318,9 +336,9 @@ namespace Vectorization
 		}
 
 		// bool
-         template<typename TypeMask>
-         __attribute__((always_inline))
-		inline void greaterThan(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
+        template<typename TypeMask>
+        VECTORIZED_KERNEL_METHOD
+		void greaterThan(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -330,8 +348,8 @@ namespace Vectorization
 
 		// bool
         template<typename TypeMask>
-        __attribute__((always_inline))
-		inline void greaterThan(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
+        VECTORIZED_KERNEL_METHOD
+		void greaterThan(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -341,8 +359,8 @@ namespace Vectorization
 
 		// bool
         template<typename TypeMask>
-        __attribute__((always_inline))
-		inline void equals(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
+        VECTORIZED_KERNEL_METHOD
+		void equals(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -352,8 +370,8 @@ namespace Vectorization
 
 		// bool
         template<typename TypeMask>
-        __attribute__((always_inline))
-		inline void equals(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
+        VECTORIZED_KERNEL_METHOD
+		void equals(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -363,8 +381,8 @@ namespace Vectorization
 
 		// bool
         template<typename TypeMask>
-        __attribute__((always_inline))
-		inline void notEqual(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
+        VECTORIZED_KERNEL_METHOD
+		void notEqual(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -374,8 +392,8 @@ namespace Vectorization
 
 		// bool
         template<typename TypeMask>
-        __attribute__((always_inline))
-		inline  void notEqual(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
+        VECTORIZED_KERNEL_METHOD
+		void notEqual(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -386,8 +404,8 @@ namespace Vectorization
 
 		// bool
         template<typename TypeMask>
-        __attribute__((always_inline))
-		inline  void logicalAnd(const KernelData<TypeMask,Simd> vec, KernelData<TypeMask,Simd> & result) const noexcept
+        VECTORIZED_KERNEL_METHOD
+		void logicalAnd(const KernelData<TypeMask,Simd> vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -397,8 +415,8 @@ namespace Vectorization
 
 		// bool
         template<typename TypeMask>
-        __attribute__((always_inline))
-		inline void logicalOr(const KernelData<TypeMask,Simd> vec, KernelData<TypeMask,Simd> & result) const noexcept
+        VECTORIZED_KERNEL_METHOD
+		void logicalOr(const KernelData<TypeMask,Simd> vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -406,8 +424,8 @@ namespace Vectorization
 			}
 		}
 
-        __attribute__((always_inline))
-		inline bool areAllTrue() const noexcept
+        VECTORIZED_KERNEL_METHOD
+		bool areAllTrue() const noexcept
 		{
 			int result = 0;
 
@@ -419,8 +437,8 @@ namespace Vectorization
 			return result==Simd;
 		}
 
-        __attribute__((always_inline))
-		inline bool isAnyTrue() const noexcept
+        VECTORIZED_KERNEL_METHOD
+		bool isAnyTrue() const noexcept
 		{
 			int result = 0;
 			for(int i=0;i<Simd;i++)
@@ -431,8 +449,8 @@ namespace Vectorization
 		}
 
 		template<typename ComparedType>
-		__attribute__((always_inline))
-		inline void ternary(const KernelData<ComparedType,Simd> vec1, const KernelData<ComparedType,Simd> vec2, KernelData<ComparedType,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void ternary(const KernelData<ComparedType,Simd> vec1, const KernelData<ComparedType,Simd> vec2, KernelData<ComparedType,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -441,8 +459,8 @@ namespace Vectorization
 		}
 
 		template<typename ComparedType>
-		__attribute__((always_inline))
-		inline void ternary(const ComparedType val1, const KernelData<ComparedType,Simd> vec2, KernelData<ComparedType,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void ternary(const ComparedType val1, const KernelData<ComparedType,Simd> vec2, KernelData<ComparedType,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -451,8 +469,8 @@ namespace Vectorization
 		}
 
 		template<typename ComparedType>
-		__attribute__((always_inline))
-		inline void ternary(const KernelData<ComparedType,Simd> vec1, const ComparedType val2, KernelData<ComparedType,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void ternary(const KernelData<ComparedType,Simd> vec1, const ComparedType val2, KernelData<ComparedType,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -461,8 +479,8 @@ namespace Vectorization
 		}
 
 		template<typename ComparedType>
-		__attribute__((always_inline))
-		inline void ternary(const ComparedType val1, const ComparedType val2, KernelData<ComparedType,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void ternary(const ComparedType val1, const ComparedType val2, KernelData<ComparedType,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -470,8 +488,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void broadcast(const Type val) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void broadcast(const Type val) noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -487,8 +505,8 @@ namespace Vectorization
 		// lane value[i] = lane value [id.data[i]]
 		// this is a gather operation within the SIMD unit
 		template<typename IntegerType>
-		__attribute__((always_inline))
-		inline void gatherFromLane(const KernelData<IntegerType,Simd> & id, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void gatherFromLane(const KernelData<IntegerType,Simd> & id, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -497,8 +515,8 @@ namespace Vectorization
 		}
 
 		// similar to gatherFromLane but with constant index values for faster operation
-		__attribute__((always_inline))
-		inline void transposeLanes(const int widthTranspose, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void transposeLanes(const int widthTranspose, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<widthTranspose;i++)
 				for(int j=0;j<widthTranspose;j++)
@@ -511,8 +529,8 @@ namespace Vectorization
 		// shifts lanes (wraps around) left n times out-of-place
 		// writes result to another result variable
 		template<typename IntegerType>
-		__attribute__((always_inline))
-		inline void lanesLeftShift(const IntegerType & n, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void lanesLeftShift(const IntegerType & n, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -526,8 +544,8 @@ namespace Vectorization
 		// writes result to another result variable
 		// n must not be greater than Simd*2
 		template<typename IntegerType>
-		__attribute__((always_inline))
-		inline void lanesRightShift(const IntegerType & n, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void lanesRightShift(const IntegerType & n, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -538,8 +556,8 @@ namespace Vectorization
 
 		// shifts lanes (wraps around) left n times in-place
 		template<typename IntegerType>
-		__attribute__((always_inline))
-		inline void lanesLeftShift(const IntegerType & n) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void lanesLeftShift(const IntegerType & n) const noexcept
 		{
 			alignas(64)
 			Type tmp[Simd];
@@ -557,8 +575,8 @@ namespace Vectorization
 		// shifts lanes (wraps around) left n times in-place
 		// n must not be greater than Simd*2
 		template<typename IntegerType>
-		__attribute__((always_inline))
-		inline void lanesRightShift(const IntegerType & n) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void lanesRightShift(const IntegerType & n) const noexcept
 		{
 			alignas(64)
 			Type tmp[Simd];
@@ -576,8 +594,8 @@ namespace Vectorization
 		// gets value from a so-called thread in the current SIMD
 		// for main body of kernel launch, lane must not overflow Simd
 		// for the tail the number of lanes is 1 so the only available lane is 0 that is itself
-		__attribute__((always_inline))
-		inline void broadcastFromLane(const int lane) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void broadcastFromLane(const int lane) noexcept
 		{
             const Type bcast = data[lane];
 			for(int i=0;i<Simd;i++)
@@ -587,8 +605,8 @@ namespace Vectorization
 		}
 
 		// same as broadcastFromLane(lane) but the target to copy is a result vector
-		__attribute__((always_inline))
-		inline void broadcastFromLaneToVector(const int lane, KernelData<Type,Simd> & result) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void broadcastFromLaneToVector(const int lane, KernelData<Type,Simd> & result) noexcept
 		{
             const Type bcast = data[lane];
 			for(int i=0;i<Simd;i++)
@@ -597,8 +615,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void readFrom(const KernelData<Type,Simd> & vec) noexcept
+		VECTORIZED_KERNEL_METHOD
+		void readFrom(const KernelData<Type,Simd> & vec) noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -607,8 +625,8 @@ namespace Vectorization
 		}
 
 		template<typename NewType>
-		__attribute__((always_inline))
-		inline void castAndCopyTo(KernelData<NewType,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void castAndCopyTo(KernelData<NewType,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -617,8 +635,8 @@ namespace Vectorization
 		}
 
 		template<typename NewType>
-		__attribute__((always_inline))
-		inline void castBitwiseAndCopyTo(KernelData<NewType,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void castBitwiseAndCopyTo(KernelData<NewType,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -627,8 +645,8 @@ namespace Vectorization
 		}
 
 
-		__attribute__((always_inline))
-		inline  void sqrt(KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void sqrt(KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -636,8 +654,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline  void add(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void add(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -645,8 +663,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline  void add(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void add(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -654,8 +672,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void sub(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void sub(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -663,8 +681,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void sub(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void sub(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -672,8 +690,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void div(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void div(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -681,8 +699,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void div(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void div(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -691,8 +709,8 @@ namespace Vectorization
 		}
 
 
-		__attribute__((always_inline))
-		inline void fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -700,8 +718,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -709,8 +727,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void fusedMultiplyAdd(const Type & val1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void fusedMultiplyAdd(const Type & val1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -718,8 +736,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void fusedMultiplyAdd(const Type & val1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void fusedMultiplyAdd(const Type & val1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -727,8 +745,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void fusedMultiplySub(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void fusedMultiplySub(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -736,8 +754,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void fusedMultiplySub(const Type & val1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void fusedMultiplySub(const Type & val1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -745,8 +763,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void fusedMultiplySub(const KernelData<Type,Simd> & vec1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void fusedMultiplySub(const KernelData<Type,Simd> & vec1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -754,8 +772,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void fusedMultiplySub(const Type & val1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void fusedMultiplySub(const Type & val1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -763,8 +781,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void mul(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void mul(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -772,8 +790,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void mul(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void mul(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -782,8 +800,8 @@ namespace Vectorization
 		}
 
 
-		__attribute__((always_inline))
-		inline void modulus(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void modulus(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -791,8 +809,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline  void modulus(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void modulus(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -800,8 +818,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void leftShift(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void leftShift(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -809,8 +827,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void leftShift(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void leftShift(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -818,8 +836,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void rightShift(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void rightShift(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -827,8 +845,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void rightShift(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void rightShift(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -837,8 +855,8 @@ namespace Vectorization
 		}
 
 		// this function is not accelerated. use it sparsely.
-		__attribute__((always_inline))
-		inline void pow(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void pow(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -848,8 +866,8 @@ namespace Vectorization
 
 		// this function is not accelerated. use it sparsely.
 		// x^y = x.pow(y,result)
-		__attribute__((always_inline))
-		inline void pow(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void pow(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -859,8 +877,8 @@ namespace Vectorization
 
 		// this function is not accelerated. use it sparsely.
 		// computes y^x = x.powFrom(y,result) is called
-		__attribute__((always_inline))
-		inline void powFrom(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void powFrom(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -869,8 +887,8 @@ namespace Vectorization
 		}
 
 		// this function is not accelerated. use it sparsely.
-		__attribute__((always_inline))
-		inline void exp(KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void exp(KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -880,8 +898,8 @@ namespace Vectorization
 
 
 		// this function is not accelerated. use it sparsely.
-		__attribute__((always_inline))
-		inline void log(KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void log(KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -890,8 +908,8 @@ namespace Vectorization
 		}
 
 		// this function is not accelerated. use it sparsely.
-		__attribute__((always_inline))
-		inline void log2(KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void log2(KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -900,8 +918,8 @@ namespace Vectorization
 		}
 
 
-		__attribute__((always_inline))
-		inline void bitwiseXor(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void bitwiseXor(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -909,8 +927,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void bitwiseXor(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void bitwiseXor(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -918,8 +936,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void bitwiseAnd(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void bitwiseAnd(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -927,8 +945,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void bitwiseAnd(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void bitwiseAnd(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -936,8 +954,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void bitwiseOr(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void bitwiseOr(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -945,16 +963,16 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void bitwiseOr(const Type & val, KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void bitwiseOr(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] | val;
 			}
 		}
-		__attribute__((always_inline))
-		inline void bitwiseNot(KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void bitwiseNot(KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -962,8 +980,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void logicalNot(KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void logicalNot(KernelData<Type,Simd> & result) const noexcept
 		{
 			for(int i=0;i<Simd;i++)
 			{
@@ -971,8 +989,8 @@ namespace Vectorization
 			}
 		}
 
-		__attribute__((always_inline))
-		inline void factorial(KernelData<Type,Simd> & result) const noexcept
+		VECTORIZED_KERNEL_METHOD
+		void factorial(KernelData<Type,Simd> & result) const noexcept
 		{
 			alignas(64)
 			Type tmpC[Simd];

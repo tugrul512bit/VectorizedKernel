@@ -20,29 +20,27 @@
 namespace Vectorization
 {
 #define CREATE_PRAGMA(x) _Pragma (#x)
-#define CREATE_METHOD_CALL_TWO_SPECIFIER(first,second) first\
-	second
 
 #if defined(__INTEL_COMPILER)
 
-#define VECTORIZED_KERNEL_METHOD CREATE_METHOD_CALL_TWO_SPECIFIER(__attribute__((always_inline)),inline)
-#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(ivdep)
+#define VECTORIZED_KERNEL_METHOD __attribute__((always_inline))
+#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(vector always vectorlength(Simd))
 
 #elif defined(__clang__)
 
-#define VECTORIZED_KERNEL_METHOD CREATE_METHOD_CALL_TWO_SPECIFIER(__attribute__((always_inline)),inline)
-#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(clang loop vectorize(enable))
+#define VECTORIZED_KERNEL_METHOD __attribute__((always_inline))inline
+#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(clang loop vectorize_width(Simd))
 
 
 #elif defined(__GNUC__) || defined(__GNUG__)
 
-#define VECTORIZED_KERNEL_METHOD CREATE_METHOD_CALL_TWO_SPECIFIER(__attribute__((always_inline)),inline)
+#define VECTORIZED_KERNEL_METHOD __attribute__((always_inline))inline
 #define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(GCC ivdep)
 
 
 #elif defined(_MSC_VER)
 
-#define VECTORIZED_KERNEL_METHOD CREATE_METHOD_CALL_TWO_SPECIFIER__declspec(inline),inline)
+#define VECTORIZED_KERNEL_METHOD __declspec(inline)
 #define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(loop( ivdep ))
 
 #elif

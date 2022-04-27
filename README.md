@@ -193,6 +193,7 @@ void Mandelbrot(std::vector<char> & image) {
     if(image.size()<width*height)
 	    image.resize(width*height);
 	kernel.run(width*height,image.data());
+	// kernel.runMultithreaded<32>(width*height,image.data()); -->19 cycles per pixel for FX8150 3.6GHz
 }
 
 

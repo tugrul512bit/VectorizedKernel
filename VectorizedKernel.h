@@ -24,7 +24,7 @@ namespace Vectorization
 #if defined(__INTEL_COMPILER)
 
 #define VECTORIZED_KERNEL_METHOD __attribute__((always_inline))
-#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(vector always vectorlength(Simd))
+#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(simd)
 
 #elif defined(__clang__)
 

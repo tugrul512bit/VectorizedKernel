@@ -28,15 +28,14 @@ namespace Vectorization
 
 #elif defined(__clang__)
 
-#define VECTORIZED_KERNEL_METHOD __attribute__((always_inline))inline
-#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(clang loop vectorize_width(Simd))
+#define VECTORIZED_KERNEL_METHOD inline
+#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(clang loop vectorize(assume_safety) vectorize_width(Simd))
 
 
 #elif defined(__GNUC__) || defined(__GNUG__)
 
-#define VECTORIZED_KERNEL_METHOD __attribute__((always_inline))inline
-#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(GCC ivdep)
-
+#define VECTORIZED_KERNEL_METHOD inline
+#define VECTORIZED_KERNEL_LOOP
 
 #elif defined(_MSC_VER)
 

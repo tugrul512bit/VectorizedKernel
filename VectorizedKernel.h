@@ -19,22 +19,34 @@
 
 namespace Vectorization
 {
+#define CREATE_PRAGMA(x) _Pragma (#x)
 
 #if defined(__INTEL_COMPILER)
 
 #define VECTORIZED_KERNEL_METHOD __attribute__((always_inline)) inline
+#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(ivdep)
 
 #elif defined(__clang__)
 
 #define VECTORIZED_KERNEL_METHOD __attribute__((always_inline)) inline
+#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(clang loop vectorize(enable))
+
 
 #elif defined(__GNUC__) || defined(__GNUG__)
 
 #define VECTORIZED_KERNEL_METHOD __attribute__((always_inline)) inline
+#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(GCC ivdep)
+
 
 #elif defined(_MSC_VER)
 
 #define VECTORIZED_KERNEL_METHOD __declspec(inline) inline
+#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(loop( ivdep ))
+
+#elif
+
+#define VECTORIZED_KERNEL_METHOD inline
+#define VECTORIZED_KERNEL_LOOP CREATE_PRAGMA(notoptimized)
 
 #endif
 
@@ -80,7 +92,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		KernelData(const Type & broadcastedInit) noexcept
 		{
-
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = broadcastedInit;
@@ -90,7 +102,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		KernelData(const KernelData<Type,Simd> & vectorizedIit) noexcept
 		{
-
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = vectorizedIit.data[i];
@@ -98,8 +110,9 @@ namespace Vectorization
 		}
 
 		VECTORIZED_KERNEL_METHOD
-		KernelData(KernelData&& dat){
-
+		KernelData(KernelData&& dat) noexcept
+		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = dat.data[i];
@@ -107,42 +120,40 @@ namespace Vectorization
 	    }
 
 		VECTORIZED_KERNEL_METHOD
-		KernelData& operator=(const KernelData& dat){
-
-			for(int i=0;i<Simd;i++)
-			{
-				data[i] = dat.data[i];
-			}
-	        return *this;
-	    };
-
-		VECTORIZED_KERNEL_METHOD
-		KernelData& operator=(KernelData&& dat){
-
-			for(int i=0;i<Simd;i++)
-			{
-				data[i] = dat.data[i];
-			}
-	        return *this;
-
-	    };
-
-		VECTORIZED_KERNEL_METHOD
-	    ~KernelData(){
-
-	    };
-
-		VECTORIZED_KERNEL_METHOD
-		KernelData<Type,Simd> & assign()
+		KernelData& operator=(const KernelData& dat) noexcept
 		{
-	    	return *this;
-		}
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				data[i] = dat.data[i];
+			}
+	        return *this;
+	    };
+
+		VECTORIZED_KERNEL_METHOD
+		KernelData& operator=(KernelData&& dat) noexcept
+		{
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				data[i] = dat.data[i];
+			}
+	        return *this;
+
+	    };
+
+		VECTORIZED_KERNEL_METHOD
+	    ~KernelData() noexcept
+		{
+
+	    };
+
 
 	    // contiguous read element by element starting from beginning of ptr
 		VECTORIZED_KERNEL_METHOD
 		void readFrom(const Type * const __restrict__ ptr) noexcept
 		{
-
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = ptr[i];
@@ -155,7 +166,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void readFromMasked(const Type * const __restrict__ ptr, const KernelData<TypeMask,Simd> & mask) noexcept
 		{
-
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = mask.data[i]?ptr[i]:data[i];
@@ -166,7 +177,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void writeTo(Type * const __restrict__ ptr) const noexcept
 		{
-
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				ptr[i] = data[i];
@@ -218,6 +229,7 @@ namespace Vectorization
 		void writeToContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) const noexcept
 		{
 			const int idx = id.data[0];
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				ptr[idx+i] = data[i];
@@ -232,6 +244,7 @@ namespace Vectorization
 		void writeToContiguousMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) const noexcept
 		{
 			const int idx = id.data[0];
+
 			for(int i=0;i<Simd;i++)
 			{
 				if(mask.data[i])
@@ -269,6 +282,7 @@ namespace Vectorization
 		void readFromContiguous(Type * const __restrict__ ptr, const KernelData<int,Simd> & id) noexcept
 		{
 			const int idx = id.data[0];
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = ptr[idx+i];
@@ -283,6 +297,7 @@ namespace Vectorization
 		void readFromContiguousMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) noexcept
 		{
 			const int idx = id.data[0];
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = mask.data[i]?ptr[idx+i]:data[i];
@@ -293,7 +308,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void idCompute(const int id, const F & f) noexcept
 		{
-
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = f(id+i);
@@ -305,6 +320,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void lessThan(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]<vec.data[i];
@@ -318,6 +334,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void lessThanOrEquals(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]<=vec.data[i];
@@ -329,6 +346,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void lessThanOrEquals(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]<=val;
@@ -340,6 +358,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void greaterThan(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]>vec.data[i];
@@ -351,6 +370,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void greaterThan(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]>val;
@@ -362,6 +382,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void equals(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] == vec.data[i];
@@ -373,6 +394,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void equals(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] == val;
@@ -384,6 +406,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void notEqual(const KernelData<Type,Simd> & vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] != vec.data[i];
@@ -395,6 +418,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void notEqual(const Type val, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] != val;
@@ -407,6 +431,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void logicalAnd(const KernelData<TypeMask,Simd> vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] && vec.data[i];
@@ -418,6 +443,7 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
 		void logicalOr(const KernelData<TypeMask,Simd> vec, KernelData<TypeMask,Simd> & result) const noexcept
 		{
+        	VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] || vec.data[i];
@@ -452,6 +478,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void ternary(const KernelData<ComparedType,Simd> vec1, const KernelData<ComparedType,Simd> vec2, KernelData<ComparedType,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]?vec1.data[i]:vec2.data[i];
@@ -462,6 +489,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void ternary(const ComparedType val1, const KernelData<ComparedType,Simd> vec2, KernelData<ComparedType,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]?val1:vec2.data[i];
@@ -472,6 +500,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void ternary(const KernelData<ComparedType,Simd> vec1, const ComparedType val2, KernelData<ComparedType,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]?vec1.data[i]:val2;
@@ -482,6 +511,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void ternary(const ComparedType val1, const ComparedType val2, KernelData<ComparedType,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i]?val1:val2;
@@ -491,7 +521,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void broadcast(const Type val) noexcept
 		{
-
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = val;
@@ -518,6 +548,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void transposeLanes(const int widthTranspose, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<widthTranspose;i++)
 				for(int j=0;j<widthTranspose;j++)
 			{
@@ -532,6 +563,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void lanesLeftShift(const IntegerType & n, KernelData<Type,Simd> & result) const noexcept
 		{
+
 			for(int i=0;i<Simd;i++)
 			{
 				const int j = (i+n)&(Simd-1);
@@ -547,6 +579,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void lanesRightShift(const IntegerType & n, KernelData<Type,Simd> & result) const noexcept
 		{
+
 			for(int i=0;i<Simd;i++)
 			{
 				const int j = (i+2*Simd-n)&(Simd-1);
@@ -598,6 +631,7 @@ namespace Vectorization
 		void broadcastFromLane(const int lane) noexcept
 		{
             const Type bcast = data[lane];
+            VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = bcast;
@@ -609,6 +643,7 @@ namespace Vectorization
 		void broadcastFromLaneToVector(const int lane, KernelData<Type,Simd> & result) noexcept
 		{
             const Type bcast = data[lane];
+            VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = bcast;
@@ -618,6 +653,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void readFrom(const KernelData<Type,Simd> & vec) noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				data[i] = vec.data[i];
@@ -628,6 +664,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void castAndCopyTo(KernelData<NewType,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = (NewType)data[i];
@@ -638,6 +675,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void castBitwiseAndCopyTo(KernelData<NewType,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = *reinterpret_cast<const NewType*>(&data[i]);
@@ -648,6 +686,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void sqrt(KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::sqrt(data[i]);
@@ -657,6 +696,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void add(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] + vec.data[i];
@@ -666,6 +706,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void add(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] + val;
@@ -675,6 +716,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void sub(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] - vec.data[i];
@@ -684,6 +726,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void sub(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] - val;
@@ -693,6 +736,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void div(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] / vec.data[i];
@@ -702,6 +746,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void div(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] / val;
@@ -712,6 +757,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = (data[i]* vec1.data[i]+ vec2.data[i]);
@@ -721,6 +767,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void fusedMultiplyAdd(const KernelData<Type,Simd> & vec1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = (data[i]* vec1.data[i]+ val2);
@@ -730,6 +777,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void fusedMultiplyAdd(const Type & val1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = (data[i]* val1+ vec2.data[i]);
@@ -739,6 +787,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void fusedMultiplyAdd(const Type & val1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = (data[i]* val1+ val2);
@@ -748,6 +797,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void fusedMultiplySub(const KernelData<Type,Simd> & vec1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = (data[i]* vec1.data[i] -vec2.data[i]);
@@ -757,6 +807,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void fusedMultiplySub(const Type & val1, const KernelData<Type,Simd> & vec2, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = (data[i]* val1 -vec2.data[i]);
@@ -766,6 +817,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void fusedMultiplySub(const KernelData<Type,Simd> & vec1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = (data[i]* vec1.data[i] -val2);
@@ -775,6 +827,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void fusedMultiplySub(const Type & val1, const Type & val2, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = (data[i]* val1 -val2);
@@ -784,6 +837,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void mul(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] * vec.data[i];
@@ -793,6 +847,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void mul(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] * val;
@@ -803,6 +858,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void modulus(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] % vec.data[i];
@@ -812,6 +868,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void modulus(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] % val;
@@ -821,6 +878,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void leftShift(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] << vec.data[i];
@@ -830,6 +888,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void leftShift(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] << val;
@@ -839,6 +898,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void rightShift(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] >> vec.data[i];
@@ -848,6 +908,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void rightShift(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] >> val;
@@ -858,6 +919,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void pow(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::pow(data[i],vec.data[i]);
@@ -869,6 +931,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void pow(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::pow(data[i],val);
@@ -880,6 +943,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void powFrom(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::pow(val,data[i]);
@@ -890,6 +954,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void exp(KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::exp(data[i]);
@@ -901,6 +966,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void log(KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::log(data[i]);
@@ -911,6 +977,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void log2(KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::log2(data[i]);
@@ -921,6 +988,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void bitwiseXor(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] ^ vec.data[i];
@@ -930,6 +998,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void bitwiseXor(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] ^ val;
@@ -939,6 +1008,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void bitwiseAnd(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] & vec.data[i];
@@ -948,6 +1018,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void bitwiseAnd(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] & val;
@@ -957,6 +1028,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void bitwiseOr(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] | vec.data[i];
@@ -966,6 +1038,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void bitwiseOr(const Type & val, KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = data[i] | val;
@@ -974,6 +1047,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void bitwiseNot(KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = ~data[i];
@@ -983,6 +1057,7 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void logicalNot(KernelData<Type,Simd> & result) const noexcept
 		{
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = !data[i];
@@ -998,10 +1073,14 @@ namespace Vectorization
 			Type tmpD[Simd];
 			alignas(64)
             Type tmpE[Simd];
+
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				tmpC[i]=data[i];
 			}
+
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				tmpD[i]=data[i]-(Type)1;
@@ -1014,26 +1093,31 @@ namespace Vectorization
 			{
 				anyWorking = false;
 
+				VECTORIZED_KERNEL_LOOP
 				for(int i=0;i<Simd;i++)
 				{
 					mask[i] = (tmpD[i]>0);
 				}
 
+				VECTORIZED_KERNEL_LOOP
 				for(int i=0;i<Simd;i++)
 				{
 					anyWorking += mask[i];
 				}
 
+				VECTORIZED_KERNEL_LOOP
 				for(int i=0;i<Simd;i++)
 				{
 					tmpE[i] =  tmpC[i] * tmpD[i];
 				}
 
+				VECTORIZED_KERNEL_LOOP
 				for(int i=0;i<Simd;i++)
 				{
 					tmpC[i] = mask[i] ? tmpE[i] : tmpC[i];
 				}
 
+				VECTORIZED_KERNEL_LOOP
 				for(int i=0;i<Simd;i++)
 				{
 					tmpD[i]--;
@@ -1041,6 +1125,7 @@ namespace Vectorization
 
 			}
 
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = tmpC[i]?tmpC[i]:1;

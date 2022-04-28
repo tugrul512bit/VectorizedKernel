@@ -80,7 +80,7 @@ namespace Vectorization
 	{
 
 
-		alignas(32)
+		alignas(64)
 		Type data[Simd];
 
 

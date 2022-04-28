@@ -80,7 +80,7 @@ namespace Vectorization
 	{
 
 
-		alignas(64)
+		alignas(32)
 		Type data[Simd];
 
 
@@ -689,6 +689,16 @@ namespace Vectorization
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = std::sqrt(data[i]);
+			}
+		}
+
+		VECTORIZED_KERNEL_METHOD
+		void rsqrt(KernelData<Type,Simd> & result) const noexcept
+		{
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 1.0f/std::sqrt(data[i]);
 			}
 		}
 

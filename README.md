@@ -33,7 +33,7 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 - logical results are of type "integer" vector (because the width of result vector has to be same as float vector).
 
 
-Hello-world:
+Hello-world that adds 0.33 to all elements of an array:
 
 ```C++
 #include "VectorizedKernel.h"

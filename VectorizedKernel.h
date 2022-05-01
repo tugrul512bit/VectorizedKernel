@@ -264,10 +264,34 @@ namespace Vectorization
 		}
 
 		// does gather operation (every element reads its own sourced ptr element, decided by elements of id)
+		VECTORIZED_KERNEL_METHOD
+		void readFrom(const Type * const __restrict__ ptr, const KernelData<int,Simd> & id) noexcept
+		{
+
+			for(int i=0;i<Simd;i++)
+			{
+				 data[i] = ptr[id.data[i]];
+			}
+		}
+
+		// does gather operation (every element reads its own sourced ptr element, decided by elements of id)
 		// masked operation: if mask lane is set, then it reads from pointer+id.data[i], if not set then it does not read anything
 		template<typename TypeMask>
 		VECTORIZED_KERNEL_METHOD
 		void readFromMasked(Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) noexcept
+		{
+
+			for(int i=0;i<Simd;i++)
+			{
+				 data[i] = mask.data[i]?ptr[id.data[i]]:data[i];
+			}
+		}
+
+		// does gather operation (every element reads its own sourced ptr element, decided by elements of id)
+		// masked operation: if mask lane is set, then it reads from pointer+id.data[i], if not set then it does not read anything
+		template<typename TypeMask>
+		VECTORIZED_KERNEL_METHOD
+		void readFromMasked(const Type * const __restrict__ ptr, const KernelData<int,Simd> & id, const KernelData<TypeMask,Simd> & mask) noexcept
 		{
 
 			for(int i=0;i<Simd;i++)
@@ -472,6 +496,28 @@ namespace Vectorization
 				result = result + (data[i]>0);
 			}
 			return result>0;
+		}
+
+        VECTORIZED_KERNEL_METHOD
+		Type popCount() const noexcept
+		{
+			int count = 0;
+			for(int i=0;i<Simd;i++)
+			{
+				count += (data[i]>0);
+			}
+			return count;
+		}
+
+        VECTORIZED_KERNEL_METHOD
+		Type horizontalAdd() const noexcept
+		{
+			Type sum = Type(0);
+			for(int i=0;i<Simd;i++)
+			{
+				sum += data[i];
+			}
+			return sum;
 		}
 
 		template<typename ComparedType>
@@ -1034,6 +1080,8 @@ namespace Vectorization
 				result.data[i] = data[i] & val;
 			}
 		}
+
+
 
 		VECTORIZED_KERNEL_METHOD
 		void bitwiseOr(const KernelData<Type,Simd> & vec, KernelData<Type,Simd> & result) const noexcept

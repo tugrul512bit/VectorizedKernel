@@ -11,7 +11,7 @@
 
 #include <vector>
 #include <iostream>
-#include <string>
+#include <cstring>
 #include <functional>
 #include <cmath>
 #include <chrono>
@@ -721,11 +721,14 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void castBitwiseAndCopyTo(KernelData<NewType,Simd> & result) const noexcept
 		{
+			std::memcpy(result.data,data,sizeof(NewType)*Simd);
+			/*
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				result.data[i] = *reinterpret_cast<const NewType*>(&data[i]);
 			}
+			*/
 		}
 
 

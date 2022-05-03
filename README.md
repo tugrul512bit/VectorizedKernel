@@ -34,11 +34,44 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 
 ### Any Math Functions Accelerated?
 
-- sinFast(result)
-- cosFast(result)
-- sqrt(result)
-- expFast(result)
-- todo: log, pow, non-constant-integer division
+- x.sinFast(result)
+- x.cosFast(result)
+- x.sqrt(result)
+- x.rsqrt(result) --> still uses sqrt instruction, not rsqrt
+- x.expFast(result)
+- todo: x.log(result), x.pow(y,result), x.divFast(non-constant-integer division,result), x.rsqrtFast(result)
+
+### Basic Functions Accelerated?
+
+- x.fusedMultiplyAdd(y,z,result)
+- x.fusedMultiplySub(y,z,result)
+- x.mul(y,result)
+- x.add(y,result)
+- x.sub(y,result)
+- x.div(y,result) --> only floating-point and constant y integer currently
+- x.modulus(y,result) --> only constant y integer
+- x.leftShift(y, result)
+- x.rightShift(y, result)
+- x.bitwiseXor(y, result)
+- x.bitwiseAnd(y, result)
+- x.bitwiseOr(y, result)
+- x.bitwiseNot(result)
+- x.logicalAnd(y, result)
+- x.ternary(y,z,result)
+- x.logicalOr(y,result)
+- x.logicalAnd(y,result)
+- x.factorial(result) 
+- x.transposeLanes
+- x.lanesRightShift
+- x.lanesLeftShift
+- x.broadcastFromLane
+- x.isAnyTrue
+- x.areAllTrue
+- x.broadcastFromLaneToVector
+- x.readFrom
+- x.castAndCopyTo
+- x.castBitwiseAndCopyTo
+- x.writeTo
 
 Hello-world that adds 0.33 to all elements of an array:
 

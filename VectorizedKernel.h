@@ -884,6 +884,82 @@ namespace Vectorization
 			}
 		}
 
+        // only optimized for [-1,1] input range!!
+        // Chebyshev Polynomial found by genetic algorithm running on 768 GPU pipelines for 4 minutes
+        VECTORIZED_KERNEL_METHOD
+        void expFast(KernelData<Type,Simd> & result) const noexcept
+        {
+
+            alignas(64)
+            Type xSqr2[Simd];
+
+            alignas(64)
+            Type xSqr3[Simd];
+
+            alignas(64)
+            Type xSqr4[Simd];
+
+            alignas(64)
+            Type xSqr5[Simd];
+
+            alignas(64)
+            Type xSqr6[Simd];
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqr2[i] =   data[i]*data[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqr3[i] =   xSqr2[i]*data[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqr4[i] =   xSqr2[i]*xSqr2[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqr5[i] =   xSqr3[i]*xSqr2[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqr6[i] =   xSqr3[i]*xSqr3[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                result.data[i]  =   Type(0.0014438629150390625)*xSqr6[i] +
+                                    Type(0.00861072540283203125)*xSqr5[i] +
+                                    Type(0.041627407073974609375)*xSqr4[i] +
+                                    Type(0.16657924652099609375)*xSqr3[i] +
+                                    Type(0.5000095367431640625)*xSqr2[i]+
+                                    Type(0.999999523162841796875)*data[i]+
+									Type(0.999999523162841796875); // no typo here, genetic algorithm found same value
+            }
+
+        }
+
+		VECTORIZED_KERNEL_METHOD
+		void exp(KernelData<Type,Simd> & result) const noexcept
+		{
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	std::exp(data[i]);
+			}
+		}
+
+
 		VECTORIZED_KERNEL_METHOD
 		void sqrt(KernelData<Type,Simd> & result) const noexcept
 		{
@@ -1161,16 +1237,7 @@ namespace Vectorization
 			}
 		}
 
-		// this function is not accelerated. use it sparsely.
-		VECTORIZED_KERNEL_METHOD
-		void exp(KernelData<Type,Simd> & result) const noexcept
-		{
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				result.data[i] = std::exp(data[i]);
-			}
-		}
+
 
 
 		// this function is not accelerated. use it sparsely.

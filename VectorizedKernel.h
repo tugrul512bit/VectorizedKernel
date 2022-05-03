@@ -777,7 +777,6 @@ namespace Vectorization
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				const Type x = data[i];
 				result.data[i] = 	Type(-3.814697265625e-06)*xSqrSqrSqrSqr[i] +
 									Type(-0.00133228302001953125)*xSqrSqrSqr[i] +
 									Type(0.041629791259765625)*xSqrSqr[i] +
@@ -797,6 +796,71 @@ namespace Vectorization
 			}
 		}
 
+		// only optimized for [-1,1] input range!!
+		// Chebyshev Polynomial found by genetic algorithm running on 3 GPUs in 2 minutes
+		VECTORIZED_KERNEL_METHOD
+		void sinFast(KernelData<Type,Simd> & result) const noexcept
+		{
+
+            alignas(64)
+            Type xSqr[Simd];
+
+            alignas(64)
+            Type xSqrSqr[Simd];
+
+            alignas(64)
+            Type xSqrSqr5[Simd];
+
+            alignas(64)
+            Type xSqrSqr8[Simd];
+
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqr[i] = 	data[i]*data[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqrSqr[i] = 	xSqr[i]*xSqr[i];
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqrSqr5[i] = 	xSqrSqr[i]*data[i];
+			}
+
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqrSqr8[i] = 	xSqrSqr[i]*xSqrSqr[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i]  = 	Type(-0.0005664825439453125)*xSqrSqr8[i]*data[i] +
+									Type(0.001037120819091796875)*xSqrSqr5[i]*xSqr[i] +
+									Type(0.007439136505126953125)*xSqrSqr5[i] +
+									Type(-0.166426181793212890625)*xSqr[i]*data[i] +
+									Type(0.999982357025146484375)*data[i];
+			}
+
+		}
+
+		VECTORIZED_KERNEL_METHOD
+		void sin(KernelData<Type,Simd> & result) const noexcept
+		{
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	std::sin(data[i]);
+			}
+		}
 
 		VECTORIZED_KERNEL_METHOD
 		void sqrt(KernelData<Type,Simd> & result) const noexcept

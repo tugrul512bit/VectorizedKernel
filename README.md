@@ -32,6 +32,13 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 - logical methods require firstOperand.logicalAnd(secondOperand,result)
 - logical results are of type "integer" vector (because the width of result vector has to be same as float vector).
 
+### Any Math Functions Accelerated?
+
+- sinFast(result)
+- cosFast(result)
+- sqrt(result)
+- expFast(result)
+- todo: log, pow, non-constant-integer division
 
 Hello-world that adds 0.33 to all elements of an array:
 

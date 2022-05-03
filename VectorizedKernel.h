@@ -732,6 +732,35 @@ namespace Vectorization
 		}
 
 
+		// only optimized for [-1,1] input range!!
+		// Chebyshev Polynomial found by genetic algorithm running on 3 GPUs in 2 minutes
+		VECTORIZED_KERNEL_METHOD
+		void cosFast(KernelData<Type,Simd> & result) const noexcept
+		{
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				const Type x = data[i];
+				result.data[i] = 	Type(-3.814697265625e-06)*x*x*x*x*x*x*x*x +
+									Type(-0.00133228302001953125)*x*x*x*x*x*x +
+									Type(0.041629791259765625)*x*x*x*x +
+									Type(-0.49999141693115234375)*x*x +
+									Type(0.999999523162841796875);
+			}
+		}
+
+
+		VECTORIZED_KERNEL_METHOD
+		void cos(KernelData<Type,Simd> & result) const noexcept
+		{
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	std::cos(data[i]);
+			}
+		}
+
+
 		VECTORIZED_KERNEL_METHOD
 		void sqrt(KernelData<Type,Simd> & result) const noexcept
 		{

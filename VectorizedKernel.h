@@ -737,14 +737,51 @@ namespace Vectorization
 		VECTORIZED_KERNEL_METHOD
 		void cosFast(KernelData<Type,Simd> & result) const noexcept
 		{
+            alignas(64)
+            Type xSqr[Simd];
+
+            alignas(64)
+            Type xSqrSqr[Simd];
+
+            alignas(64)
+            Type xSqrSqrSqr[Simd];
+
+            alignas(64)
+            Type xSqrSqrSqrSqr[Simd];
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqr[i] = 	data[i]*data[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqrSqr[i] = 	xSqr[i]*xSqr[i];
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqrSqrSqr[i] = 	xSqrSqr[i]*xSqr[i];
+			}
+
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqrSqrSqrSqr[i] = 	xSqrSqr[i]*xSqrSqr[i];
+			}
+
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
 				const Type x = data[i];
-				result.data[i] = 	Type(-3.814697265625e-06)*x*x*x*x*x*x*x*x +
-									Type(-0.00133228302001953125)*x*x*x*x*x*x +
-									Type(0.041629791259765625)*x*x*x*x +
-									Type(-0.49999141693115234375)*x*x +
+				result.data[i] = 	Type(-3.814697265625e-06)*xSqrSqrSqrSqr[i] +
+									Type(-0.00133228302001953125)*xSqrSqrSqr[i] +
+									Type(0.041629791259765625)*xSqrSqr[i] +
+									Type(-0.49999141693115234375)*xSqr[i] +
 									Type(0.999999523162841796875);
 			}
 		}

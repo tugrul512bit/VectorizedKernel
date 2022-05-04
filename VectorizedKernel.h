@@ -756,6 +756,7 @@ namespace Vectorization
 
             // these have to be as high precision as possible to let wide-range of inputs be used
             constexpr double pi =  /*Type(std::acos(-1));*/ double(3.1415926535897932384626433832795028841971693993751058209749445923);
+            constexpr Type piLowPrec = pi;
             constexpr double twoPi = double(2.0 * pi);
             constexpr double twoPiInv = double(1.0/twoPi);
 
@@ -774,13 +775,13 @@ namespace Vectorization
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				reducedData[i]=reducedData[i]<0.0?reducedData[i]-twoPi:reducedData[i];
+				reducedData[i]=reducedData[i]<Type(0.0)?reducedData[i]-twoPi:reducedData[i];
 			}
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				reducedData[i] = reducedData[i] - pi;
+				reducedData[i] = reducedData[i] - piLowPrec;
 			}
 
 
@@ -918,6 +919,12 @@ namespace Vectorization
 			double wrapAroundHighPrecision[Simd];
 
             alignas(64)
+			double wrapAroundHighPrecisionTmp[Simd];
+
+            alignas(64)
+			double wrapAroundHighPrecisionTmp2[Simd];
+
+            alignas(64)
             Type reducedData[Simd];
 
             alignas(64)
@@ -938,7 +945,9 @@ namespace Vectorization
 
             // these have to be as high precision as possible to let wide-range of inputs be used
             constexpr double pi =  /*Type(std::acos(-1));*/ double(3.1415926535897932384626433832795028841971693993751058209749445923);
+            constexpr Type piLowPrec = pi;
             constexpr double twoPi = double(2.0 * pi);
+            constexpr double twoPiLowPrec = double(2.0 * pi);
             constexpr double twoPiInv = double(1.0/twoPi);
 
 			VECTORIZED_KERNEL_LOOP
@@ -947,22 +956,56 @@ namespace Vectorization
 				wrapAroundHighPrecision[i] = data[i];
 			}
 
+
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				reducedData[i] = wrapAroundHighPrecision[i] - twoPi * std::floor(wrapAroundHighPrecision[i] * twoPiInv);
+				wrapAroundHighPrecisionTmp[i] =  wrapAroundHighPrecision[i] * twoPiInv;
 			}
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				reducedData[i]=reducedData[i]<0.0?reducedData[i]-twoPi:reducedData[i];
+				wrapAroundHighPrecisionTmp[i] =  std::floor(wrapAroundHighPrecisionTmp[i]);
 			}
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				reducedData[i] = reducedData[i] - pi;
+				wrapAroundHighPrecisionTmp2[i] = twoPi * wrapAroundHighPrecisionTmp[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i] = wrapAroundHighPrecision[i] - wrapAroundHighPrecisionTmp2[i];
+			}
+
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				tmp[i]=reducedData[i]<Type(0.0);
+			}
+
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqr[i]=reducedData[i]-twoPiLowPrec;
+			}
+
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i]=tmp[i]?xSqr[i]:reducedData[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i] = reducedData[i] - piLowPrec;
 			}
 
 
@@ -1030,12 +1073,35 @@ namespace Vectorization
             }
 
 
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqr[i] =   result.data[i]*result.data[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqrSqr[i] =   xSqr[i]*result.data[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqrSqr8[i] =   xSqr[i]*xSqr[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqrSqr5[i] =   xSqrSqr8[i]*result.data[i];
+            }
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = 	Type(16.0)*result.data[i]*result.data[i]*result.data[i]*result.data[i] *result.data[i]  -
-						Type(20.0)*result.data[i]*result.data[i] *result.data[i] +
+				result.data[i] = 	Type(16.0)*xSqrSqr5[i]  -
+						Type(20.0)*xSqrSqr[i] +
 						Type(5.0)*result.data[i];
 			}
 

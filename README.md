@@ -34,6 +34,8 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 
 ### Any Math Functions Accelerated?
 
+- x.cosFastFullRange(result)
+- x.sinFastFullRange(result)
 - x.sinFast(result)
 - x.cosFast(result)
 - x.sqrt(result)

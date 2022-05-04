@@ -722,15 +722,136 @@ namespace Vectorization
 		void castBitwiseAndCopyTo(KernelData<NewType,Simd> & result) const noexcept
 		{
 			std::memcpy(result.data,data,sizeof(NewType)*Simd);
-			/*
+		}
+		float fmodrem(float f) const noexcept
+		{
+		    auto r = std::remainder(f,2.0 * 3.14159265358979);
+		    if(r<0)
+		    return r + 2.0 * 3.14159265358979;
+		    else
+		    return r;
+		}
+
+		// optimized for [-any,+any] input range!!
+		VECTORIZED_KERNEL_METHOD
+		void cosFastFullRange(KernelData<Type,Simd> & result) const noexcept
+		{
+			// reduce range to [-pi,+pi] by modf(input, 2pi) - pi { at high precision }
+			// divide by 4 (multiply 0.25)
+			// compute on [-1,+1] range
+			// compute T4(cos(x)) chebyshev (   8cos(x)^4 - 8cos(x)^2 + 1   )
+			// return
+
+            alignas(64)
+            Type wrapAroundHighPrecision[Simd];
+
+
+            alignas(64)
+            Type reducedData[Simd];
+
+            alignas(64)
+            Type xSqr[Simd];
+
+            alignas(64)
+            Type xSqrSqr[Simd];
+
+            alignas(64)
+            Type xSqrSqrSqr[Simd];
+
+            alignas(64)
+            Type xSqrSqrSqrSqr[Simd];
+
+            // these have to be as high precision as possible to let wide-range of inputs be used
+            constexpr double pi =  /*Type(std::acos(-1));*/ double(3.1415926535897932384626433832795028841971693993751058209749445923);
+            constexpr Type piLowPrec = Type(3.1415926535897932384626433832795028841971693993751058209749445923);
+            constexpr double twoPi = double(2.0 * pi);
+            constexpr double twoPiInv = double(1.0/twoPi);
+
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = *reinterpret_cast<const NewType*>(&data[i]);
+				wrapAroundHighPrecision[i] = data[i];
 			}
-			*/
-		}
 
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i] = wrapAroundHighPrecision[i] - twoPi * std::floor(wrapAroundHighPrecision[i] * twoPiInv);
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i]=reducedData[i]<0.0?reducedData[i]-twoPi:reducedData[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i] = reducedData[i] - pi;
+			}
+
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i] = reducedData[i]*Type(0.25);
+			}
+
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqr[i] = 	reducedData[i]*reducedData[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqrSqr[i] = 	xSqr[i]*xSqr[i];
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqrSqrSqr[i] = 	xSqrSqr[i]*xSqr[i];
+			}
+
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				xSqrSqrSqrSqr[i] = 	xSqrSqr[i]*xSqrSqr[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	Type(-3.814697265625e-06)*xSqrSqrSqrSqr[i] +
+									Type(-0.00133228302001953125)*xSqrSqrSqr[i] +
+									Type(0.041629791259765625)*xSqrSqr[i] +
+									Type(-0.49999141693115234375)*xSqr[i] +
+									Type(0.999999523162841796875);
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	result.data[i]*result.data[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	Type(8.0)*(result.data[i]*result.data[i] - result.data[i]) + Type(1.0);
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	-result.data[i];
+			}
+		}
 
 		// only optimized for [-1,1] input range!!
 		// Chebyshev Polynomial found by genetic algorithm running on 3 GPUs in 2 minutes

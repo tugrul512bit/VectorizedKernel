@@ -723,14 +723,7 @@ namespace Vectorization
 		{
 			std::memcpy(result.data,data,sizeof(NewType)*Simd);
 		}
-		float fmodrem(float f) const noexcept
-		{
-		    auto r = std::remainder(f,2.0 * 3.14159265358979);
-		    if(r<0)
-		    return r + 2.0 * 3.14159265358979;
-		    else
-		    return r;
-		}
+
 
 		// optimized for [-any,+any] input range!!
 		VECTORIZED_KERNEL_METHOD
@@ -743,7 +736,7 @@ namespace Vectorization
 			// return
 
             alignas(64)
-            Type wrapAroundHighPrecision[Simd];
+            double wrapAroundHighPrecision[Simd];
 
 
             alignas(64)
@@ -763,7 +756,6 @@ namespace Vectorization
 
             // these have to be as high precision as possible to let wide-range of inputs be used
             constexpr double pi =  /*Type(std::acos(-1));*/ double(3.1415926535897932384626433832795028841971693993751058209749445923);
-            constexpr Type piLowPrec = Type(3.1415926535897932384626433832795028841971693993751058209749445923);
             constexpr double twoPi = double(2.0 * pi);
             constexpr double twoPiInv = double(1.0/twoPi);
 
@@ -854,7 +846,7 @@ namespace Vectorization
 		}
 
 		// only optimized for [-1,1] input range!!
-		// Chebyshev Polynomial found by genetic algorithm running on 3 GPUs in 2 minutes
+		// Chebyshev Polynomial coefficients found by genetic algorithm running on 3 GPUs in 2 minutes
 		VECTORIZED_KERNEL_METHOD
 		void cosFast(KernelData<Type,Simd> & result) const noexcept
 		{
@@ -917,8 +909,146 @@ namespace Vectorization
 			}
 		}
 
+        // only optimized for [-any,any] input range!!
+        // Chebyshev Polynomial coefficients found by genetic algorithm running on 768 GPU pipelines for 5 minutes
+        VECTORIZED_KERNEL_METHOD
+        void sinFastFullRange(KernelData<Type,Simd> & result) const noexcept
+        {
+            alignas(64)
+			double wrapAroundHighPrecision[Simd];
+
+            alignas(64)
+            Type reducedData[Simd];
+
+            alignas(64)
+            Type xSqr[Simd];
+
+            alignas(64)
+            Type xSqrSqr[Simd];
+
+            alignas(64)
+            Type xSqrSqr5[Simd];
+
+            alignas(64)
+            Type xSqrSqr8[Simd];
+
+            alignas(64)
+            Type tmp[Simd];
+
+
+            // these have to be as high precision as possible to let wide-range of inputs be used
+            constexpr double pi =  /*Type(std::acos(-1));*/ double(3.1415926535897932384626433832795028841971693993751058209749445923);
+            constexpr double twoPi = double(2.0 * pi);
+            constexpr double twoPiInv = double(1.0/twoPi);
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				wrapAroundHighPrecision[i] = data[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i] = wrapAroundHighPrecision[i] - twoPi * std::floor(wrapAroundHighPrecision[i] * twoPiInv);
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i]=reducedData[i]<0.0?reducedData[i]-twoPi:reducedData[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i] = reducedData[i] - pi;
+			}
+
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				reducedData[i] = reducedData[i]*Type(0.2);
+			}
+
+
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqr[i] =   reducedData[i]*reducedData[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqrSqr[i] =    xSqr[i]*xSqr[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqrSqr5[i] =   xSqrSqr[i]*reducedData[i];
+            }
+
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqrSqr8[i] =   xSqrSqr[i]*xSqrSqr[i];
+            }
+
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqrSqr8[i] =   xSqrSqr8[i]*reducedData[i] ;
+            }
+
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                tmp[i] =   xSqrSqr5[i]*xSqr[i] ;
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xSqr[i] =   xSqr[i]*reducedData[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                result.data[i]  =   Type(-0.0005664825439453125)*xSqrSqr8[i] +
+                                    Type(0.001037120819091796875)*tmp[i] +
+                                    Type(0.007439136505126953125)*xSqrSqr5[i] +
+                                    Type(-0.166426181793212890625)*xSqr[i] +
+                                    Type(0.999982357025146484375)*reducedData[i];
+            }
+
+
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	Type(16.0)*result.data[i]*result.data[i]*result.data[i]*result.data[i] *result.data[i]  -
+						Type(20.0)*result.data[i]*result.data[i] *result.data[i] +
+						Type(5.0)*result.data[i];
+			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	-result.data[i];
+			}
+
+        }
+
         // only optimized for [-1,1] input range!!
-        // Chebyshev Polynomial found by genetic algorithm running on 768 GPU pipelines for 5 minutes
+        // Chebyshev Polynomial coefficients found by genetic algorithm running on 768 GPU pipelines for 5 minutes
         VECTORIZED_KERNEL_METHOD
         void sinFast(KernelData<Type,Simd> & result) const noexcept
         {
@@ -1006,7 +1136,7 @@ namespace Vectorization
 		}
 
         // only optimized for [-1,1] input range!!
-        // Chebyshev Polynomial found by genetic algorithm running on 768 GPU pipelines for 4 minutes
+        // Chebyshev Polynomial coefficients found by genetic algorithm running on 768 GPU pipelines for 4 minutes
         VECTORIZED_KERNEL_METHOD
         void expFast(KernelData<Type,Simd> & result) const noexcept
         {

@@ -848,11 +848,11 @@ namespace Vectorization
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = 	Type(-3.814697265625e-06)*xSqrSqrSqrSqr[i] +
-									Type(-0.00133228302001953125)*xSqrSqrSqr[i] +
-									Type(0.041629791259765625)*xSqrSqr[i] +
-									Type(-0.49999141693115234375)*xSqr[i] +
-									Type(0.999999523162841796875);
+				result.data[i] = 	Type(1.501674809567532520304667e-05)*xSqrSqrSqrSqr[i] +
+									Type(-0.00136969625688632135052103)*xSqrSqrSqr[i] +
+									Type(0.04165418732956549519030887)*xSqrSqr[i] +
+									Type(-0.4999972107705463741922358)*xSqr[i] +
+									Type(0.9999998864051704572375456);
 			}
 
 			VECTORIZED_KERNEL_LOOP
@@ -955,6 +955,13 @@ namespace Vectorization
         VECTORIZED_KERNEL_METHOD
         void sinFastFullRange(KernelData<Type,Simd> & result) const noexcept
         {
+
+			// reduce range to [-pi,+pi] by modf(input, 2pi) - pi { at high precision }
+			// divide by 5 (multiply 0.2)
+			// compute on [-1,+1] range
+			// compute T5(cos(x)) chebyshev (   16sin(x)^5 - 20sin(x)^3 + 5sin(x)   )
+			// return
+
             alignas(64)
 			double wrapAroundHighPrecision[Simd];
 

@@ -735,95 +735,105 @@ namespace Vectorization
 			// compute T4(cos(x)) chebyshev (   8cos(x)^4 - 8cos(x)^2 + 1   )
 			// return
 
-            alignas(64)
-            double wrapAroundHighPrecision[Simd];
+		    alignas(64)
+		    double wrapAroundHighPrecision[Simd];
 
-            alignas(64)
-            double wrapAroundHighPrecisionTmp[Simd];
+		    alignas(64)
+		    double wrapAroundHighPrecisionTmp[Simd];
 
-            alignas(64)
-            Type reducedData[Simd];
+		    alignas(64)
+		    double reducedData[Simd];
 
-            alignas(64)
-            Type xSqr[Simd];
 
-            alignas(64)
-            Type xSqrSqr[Simd];
+		    alignas(64)
+		    double reducedDataTmp[Simd];
 
-            alignas(64)
-            Type xSqrSqrSqr[Simd];
+		    alignas(64)
+		    Type xSqr[Simd];
 
-            alignas(64)
-            Type xSqrSqrSqrSqr[Simd];
+		    alignas(64)
+		    Type xSqrSqr[Simd];
 
-            // these have to be as high precision as possible to let wide-range of inputs be used
-            constexpr double pi =  /*Type(std::acos(-1));*/ double(3.1415926535897932384626433832795028841971693993751058209749445923);
-            constexpr Type piLowPrec = pi;
-            constexpr double twoPi = double(2.0 * pi);
-            constexpr Type twoPiLowPrec = double(2.0 * pi);
-            constexpr double twoPiInv = double(1.0/twoPi);
+		    alignas(64)
+		    Type xSqrSqrSqr[Simd];
+
+		    alignas(64)
+		    Type xSqrSqrSqrSqr[Simd];
+
+		    // these have to be as high precision as possible to let wide-range of inputs be used
+		    constexpr double pi =  /*Type(std::acos(-1));*/ double(3.1415926535897932384626433832795028841971693993751058209749445923);
+		    constexpr Type piLowPrec = pi;
+		    constexpr double twoPi = double(2.0 * pi);
+		    constexpr Type twoPiLowPrec = double(2.0 * pi);
+		    constexpr double twoPiInv = double(1.0/twoPi);
+
+		    #pragma GCC ivdep
+		    for(int i=0;i<Simd;i++)
+		    {
+		        wrapAroundHighPrecision[i] = data[i];
+		    }
+
+
+		    #pragma GCC ivdep
+		    for(int i=0;i<Simd;i++)
+		    {
+		        wrapAroundHighPrecisionTmp[i] = wrapAroundHighPrecision[i] * twoPiInv;
+		    }
+
+		    #pragma GCC ivdep
+		    for(int i=0;i<Simd;i++)
+		    {
+		        wrapAroundHighPrecisionTmp[i] = std::floor(wrapAroundHighPrecisionTmp[i]);
+		    }
+
+		    #pragma GCC ivdep
+		    for(int i=0;i<Simd;i++)
+		    {
+		        wrapAroundHighPrecisionTmp[i] = twoPi*wrapAroundHighPrecisionTmp[i];
+		    }
+
+		    #pragma GCC ivdep
+		    for(int i=0;i<Simd;i++)
+		    {
+		        reducedData[i] = wrapAroundHighPrecision[i] - wrapAroundHighPrecisionTmp[i];
+		    }
+
+
+		    #pragma GCC ivdep
+		    for(int i=0;i<Simd;i++)
+		    {
+		        reducedDataTmp[i] = reducedData[i]-twoPiLowPrec;
+		    }
+
+		    #pragma GCC ivdep
+		    for(int i=0;i<Simd;i++)
+		    {
+		        reducedData[i]=reducedData[i]<double(0.0)?reducedDataTmp[i]:reducedData[i];
+		    }
+
+		    #pragma GCC ivdep
+		    for(int i=0;i<Simd;i++)
+		    {
+		        reducedData[i] = reducedData[i] - piLowPrec;
+		    }
+
+
+		    #pragma GCC ivdep
+		    for(int i=0;i<Simd;i++)
+		    {
+		        reducedData[i] = reducedData[i]*Type(0.25);
+		    }
+
+		    #pragma GCC ivdep
+		    for(int i=0;i<Simd;i++)
+		    {
+		        reducedData[i] = 	reducedData[i]*reducedData[i];
+		    }
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				wrapAroundHighPrecision[i] = data[i];
-			}
-
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				wrapAroundHighPrecisionTmp[i] = wrapAroundHighPrecision[i] * twoPiInv;
-			}
-
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				wrapAroundHighPrecisionTmp[i] = std::floor(wrapAroundHighPrecisionTmp[i]);
-			}
-
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				wrapAroundHighPrecisionTmp[i] = twoPi*wrapAroundHighPrecisionTmp[i];
-			}
-
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				reducedData[i] = wrapAroundHighPrecision[i] - wrapAroundHighPrecisionTmp[i];
-			}
-
-
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				xSqr[i] = reducedData[i]-twoPiLowPrec;
-			}
-
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				reducedData[i]=reducedData[i]<Type(0.0)?xSqr[i]:reducedData[i];
-			}
-
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				reducedData[i] = reducedData[i] - piLowPrec;
-			}
-
-
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				reducedData[i] = reducedData[i]*Type(0.25);
-			}
-
-
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				xSqr[i] = 	reducedData[i]*reducedData[i];
+				xSqr[i] = 	reducedData[i];
 			}
 
 			VECTORIZED_KERNEL_LOOP
@@ -848,11 +858,11 @@ namespace Vectorization
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = 	Type(1.501674809567532520304667e-05)*xSqrSqrSqrSqr[i] +
-									Type(-0.00136969625688632135052103)*xSqrSqrSqr[i] +
-									Type(0.04165418732956549519030887)*xSqrSqr[i] +
-									Type(-0.4999972107705463741922358)*xSqr[i] +
-									Type(0.9999998864051704572375456);
+				result.data[i] = 	Type(2.37711074060342753000441e-05)*xSqrSqrSqrSqr[i] +
+									Type(-0.001387712893937020908197155)*xSqrSqrSqr[i] +
+									Type(0.04166611039514833692010143)*xSqrSqr[i] +
+									Type(-0.4999998698566363586337502)*xSqr[i] +
+									Type(0.9999999941252593060880827);
 			}
 
 			VECTORIZED_KERNEL_LOOP
@@ -931,11 +941,11 @@ namespace Vectorization
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = 	Type(-3.814697265625e-06)*xSqrSqrSqrSqr[i] +
-									Type(-0.00133228302001953125)*xSqrSqrSqr[i] +
-									Type(0.041629791259765625)*xSqrSqr[i] +
-									Type(-0.49999141693115234375)*xSqr[i] +
-									Type(0.999999523162841796875);
+				result.data[i] = 	Type(2.37711074060342753000441e-05)*xSqrSqrSqrSqr[i] +
+									Type(-0.001387712893937020908197155)*xSqrSqrSqr[i] +
+									Type(0.04166611039514833692010143)*xSqrSqr[i] +
+									Type(-0.4999998698566363586337502)*xSqr[i] +
+									Type(0.9999999941252593060880827);
 			}
 		}
 

@@ -762,9 +762,9 @@ namespace Vectorization
 
 		    // these have to be as high precision as possible to let wide-range of inputs be used
 		    constexpr double pi =  /*Type(std::acos(-1));*/ double(3.1415926535897932384626433832795028841971693993751058209749445923);
-		    constexpr Type piLowPrec = pi;
+
 		    constexpr double twoPi = double(2.0 * pi);
-		    constexpr Type twoPiLowPrec = double(2.0 * pi);
+
 		    constexpr double twoPiInv = double(1.0/twoPi);
 
 		    #pragma GCC ivdep
@@ -802,7 +802,7 @@ namespace Vectorization
 		    #pragma GCC ivdep
 		    for(int i=0;i<Simd;i++)
 		    {
-		        reducedDataTmp[i] = reducedData[i]-twoPiLowPrec;
+		        reducedDataTmp[i] = reducedData[i]-twoPi;
 		    }
 
 		    #pragma GCC ivdep
@@ -814,14 +814,14 @@ namespace Vectorization
 		    #pragma GCC ivdep
 		    for(int i=0;i<Simd;i++)
 		    {
-		        reducedData[i] = reducedData[i] - piLowPrec;
+		        reducedData[i] = reducedData[i] - pi;
 		    }
 
 
 		    #pragma GCC ivdep
 		    for(int i=0;i<Simd;i++)
 		    {
-		        reducedData[i] = reducedData[i]*Type(0.25);
+		        reducedData[i] = reducedData[i]*double(0.25);
 		    }
 
 		    #pragma GCC ivdep

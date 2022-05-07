@@ -1239,11 +1239,11 @@ namespace Vectorization
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-                result.data[i]  =   Type(-0.0005664825439453125)*xSqrSqr8[i] +
-                                    Type(0.001037120819091796875)*tmp[i] +
-                                    Type(0.007439136505126953125)*xSqrSqr5[i] +
-                                    Type(-0.166426181793212890625)*xSqr[i] +
-                                    Type(0.999982357025146484375)*data[i];
+                result.data[i]  =   Type(2.43217525053296412806958e-06)*xSqrSqr8[i] +
+                                    Type(-0.0001981444049592440137530502)*tmp[i] +
+                                    Type(0.008333377566660971069723018)*xSqrSqr5[i] +
+                                    Type(-0.1666666708672206453911713)*xSqr[i] +
+                                    Type(0.9999999904389822447114966)*data[i];
             }
 
         }

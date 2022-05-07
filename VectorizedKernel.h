@@ -751,14 +751,6 @@ namespace Vectorization
 		    alignas(64)
 		    Type xSqr[Simd];
 
-		    alignas(64)
-		    Type xSqrSqr[Simd];
-
-		    alignas(64)
-		    Type xSqrSqrSqr[Simd];
-
-		    alignas(64)
-		    Type xSqrSqrSqrSqr[Simd];
 
 		    // these have to be as high precision as possible to let wide-range of inputs be used
 		    constexpr double pi =  /*Type(std::acos(-1));*/ double(3.1415926535897932384626433832795028841971693993751058209749445923);
@@ -836,40 +828,39 @@ namespace Vectorization
 				xSqr[i] = 	reducedData[i];
 			}
 
+
+
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				xSqrSqr[i] = 	xSqr[i]*xSqr[i];
-			}
-
-            VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				xSqrSqrSqr[i] = 	xSqrSqr[i]*xSqr[i];
+				result.data[i] = 	Type(2.425144155360214881511638e-05);
 			}
 
 
-            VECTORIZED_KERNEL_LOOP
+			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				xSqrSqrSqrSqr[i] = 	xSqrSqr[i]*xSqrSqr[i];
+				result.data[i] = 	result.data[i]*xSqr[i] + Type(-0.001388599083010255696990498);
 			}
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = 	Type(2.37711074060342753000441e-05)*xSqrSqrSqrSqr[i] +
-									Type(-0.001387712893937020908197155)*xSqrSqrSqr[i] +
-									Type(0.04166611039514833692010143)*xSqrSqr[i] +
-									Type(-0.4999998698566363586337502)*xSqr[i] +
-									Type(0.9999999941252593060880827);
+				result.data[i] = 	result.data[i]*xSqr[i] + Type(0.04166657759826541962411284);
 			}
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = 	result.data[i]*result.data[i];
+				result.data[i] = 	result.data[i]*xSqr[i] + Type(-0.4999999436679569697616898);
 			}
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	result.data[i]*xSqr[i] + Type(0.9999999821855363180134191);
+			}
+
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
@@ -877,16 +868,18 @@ namespace Vectorization
 				xSqr[i] = 	result.data[i]*result.data[i];
 			}
 
-			VECTORIZED_KERNEL_LOOP
-			for(int i=0;i<Simd;i++)
-			{
-				xSqr[i] = 	xSqr[i] - result.data[i];
-			}
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] = 	Type(8.0)*xSqr[i] + Type(1.0);
+				result.data[i] = 	Type(8.0)*xSqr[i] - Type(8.0);
+			}
+
+
+			VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] = 	result.data[i]*xSqr[i] + Type(1.0);
 			}
 
 			VECTORIZED_KERNEL_LOOP

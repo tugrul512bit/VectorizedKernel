@@ -34,7 +34,7 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 
 ### Any Math Functions Accelerated?
 
-- x.cosFastFullRange(result)
+- x.cosFastFullRange(result) ---> too high ulps, error at digit 0.0000001 so watchout for outputs that are close to zero
 - x.sinFastFullRange(result)
 - x.sinFast(result) ---> 0.16 ulps average distance from std::sin, 1 ulps max distance
 - x.cosFast(result) --> 0.08 ulps average, 1 ulps max distance from std::cos

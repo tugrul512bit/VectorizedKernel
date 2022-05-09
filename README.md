@@ -36,7 +36,7 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 
 - x.cosFastFullRange(result) ---> too high ulps, error at digit 0.0000001 so watchout for outputs that are close to zero
 - x.sinFastFullRange(result)
-- x.sinFast(result) ---> 0.16 ulps average distance from std::sin, 1 ulps max distance
+- x.sinFast(result) ---> 0.16 ulps average distance from std::sin, 2 ulps max distance
 - x.cosFast(result) --> 0.08 ulps average, 1 ulps max distance from std::cos
 - x.sqrt(result)
 - x.rsqrt(result) --> still uses sqrt instruction, not rsqrt

@@ -1069,28 +1069,28 @@ namespace Vectorization
 
 
 
-			VECTORIZED_KERNEL_LOOP
+	        VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				resultData[i] = 	Type(2.43217525053296412806958e-06)*xSqr[i] +  Type(-0.0001981444049592440137530502);
+				resultData[i] =    Type(2.543240487540288086165674e-06)*xSqr[i] + Type(-0.0001980781510937390521576162);
 			}
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				resultData[i] = 	resultData[i]*xSqr[i] + Type(0.008333377566660971069723018);
+				resultData[i] =    resultData[i]*xSqr[i] + Type(0.008333159571549231259268709);
 			}
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				resultData[i] = 	resultData[i]*xSqr[i] + Type(-0.1666666708672206453911713);
+				resultData[i] =    resultData[i]*xSqr[i] + Type(-0.1666666483147380972695828);
 			}
 
 			VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				resultData[i] = 	resultData[i]*xSqr[i] + Type(0.9999999904389822447114966);
+				resultData[i] =    resultData[i]*xSqr[i] + Type(0.9999999963401755564973428);
 			}
 
 			VECTORIZED_KERNEL_LOOP
@@ -1158,28 +1158,33 @@ namespace Vectorization
             }
 
 
+
+
+
+
+
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	resultData[i] =    Type(2.43217525053296412806958e-06)*xSqr[i] + Type(-0.0001981444049592440137530502);
+            	resultData[i] =    Type(2.543240487540288086165674e-06)*xSqr[i] + Type(-0.0001980781510937390521576162);
             }
 
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	resultData[i] =    resultData[i]*xSqr[i] + Type(0.008333377566660971069723018);
+            	resultData[i] =    resultData[i]*xSqr[i] + Type(0.008333159571549231259268709);
             }
 
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	resultData[i] =    resultData[i]*xSqr[i] + Type(-0.1666666708672206453911713);
+            	resultData[i] =    resultData[i]*xSqr[i] + Type(-0.1666666483147380972695828);
             }
 
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	resultData[i] =    resultData[i]*xSqr[i] + Type(0.9999999904389822447114966);
+            	resultData[i] =    resultData[i]*xSqr[i] + Type(0.9999999963401755564973428);
             }
 
             VECTORIZED_KERNEL_LOOP

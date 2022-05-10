@@ -1206,7 +1206,7 @@ namespace Vectorization
 		}
 
         // only optimized for [-1,1] input range!!
-        // Chebyshev Polynomial coefficients found by genetic algorithm running on 768 GPU pipelines for 4 minutes
+        // Chebyshev Polynomial coefficients found by genetic algorithm running on 768 GPU pipelines for 1 hour
         VECTORIZED_KERNEL_METHOD
         void expFast(KernelData<Type,Simd> & result) const noexcept
         {
@@ -1219,37 +1219,43 @@ namespace Vectorization
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	resultData[i] =    Type(0.001308540482656717074405606)*data[i] + Type(0.008597710840184902281180257);
+            	resultData[i] =    Type(0.0001972591916103993980868836)*data[i] + Type(0.001433947376170863208244555);
             }
 
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	resultData[i] =    resultData[i]*data[i] + Type(0.04179764697408305806902717);
+            	resultData[i] =    resultData[i]*data[i] + Type(0.008338950118885968265658448);
             }
 
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	resultData[i] =    resultData[i]*data[i] + Type(0.1665886519204740068289539);
+            	resultData[i] =    resultData[i]*data[i] + Type(0.04164162895364054151059463);
             }
 
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	resultData[i] =    resultData[i]*data[i] + Type(0.4999624085052793986960751);
+            	resultData[i] =    resultData[i]*data[i] + Type(0.1666645212581130408580066);
             }
 
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	resultData[i] =    resultData[i]*data[i] + Type(0.999999995821090337244641);
+            	resultData[i] =    resultData[i]*data[i] + Type(0.5000045184212300597437206);
             }
 
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	result.data[i] =    resultData[i]*data[i] + Type(0.9999999861892749919434209);
+            	resultData[i] =    resultData[i]*data[i] + Type(0.9999999756072401879691824);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	result.data[i] =    resultData[i]*data[i] + Type(0.999999818912344906607359);
             }
 
 

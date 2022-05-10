@@ -40,7 +40,7 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 - x.cosFast(result) --> 0.08 ulps average, 1 ulps max distance from std::cos
 - x.sqrt(result)
 - x.rsqrt(result) --> still uses sqrt instruction, not rsqrt
-- x.expFast(result) --> 18-23 ulps average, 113 ulps max
+- x.expFast(result) --> 0.5 ULPS average, 10 ulps max
 - todo: x.log(result), x.pow(y,result), x.divFast(non-constant-integer division,result), x.rsqrtFast(result)
 
 ### Basic Functions Accelerated?

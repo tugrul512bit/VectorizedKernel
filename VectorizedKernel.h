@@ -1205,6 +1205,238 @@ namespace Vectorization
 			}
 		}
 
+
+		// [0.5,1] range --> 0.000008-0.000000005 error
+		// [0,0.5] ramge --> 0.33 - 0.000008 error
+		VECTORIZED_KERNEL_METHOD
+		void cubeRootFast(KernelData<Type,Simd> & result) const noexcept
+		{
+            alignas(64)
+            Type xd[Simd];
+
+            alignas(64)
+            Type resultData[Simd];
+
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	xd[i] =    data[i]-Type(1.0);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =    Type(-55913.0/4782969.0);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =   resultData[i] * xd[i] +  Type(21505.0/1594323.0);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =   resultData[i] * xd[i] +  Type(-935.0/59049.0);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =   resultData[i] * xd[i] +  Type(374.0/19683.0);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =   resultData[i] * xd[i] +  Type(-154.0/6561.0);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				resultData[i] =   resultData[i] * xd[i] +  Type(22.0/729.0);
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				resultData[i] =   resultData[i] * xd[i] +  Type(-10.0/243.0);
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				resultData[i] =   resultData[i] * xd[i] +  Type(5.0/81.0);
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				resultData[i] =   resultData[i] * xd[i] +  Type(-1.0/9.0);
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				resultData[i] =   resultData[i] * xd[i] +  Type(1.0/3.0);
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] =   resultData[i] * xd[i] +  Type(1.0);
+			}
+
+
+		}
+
+		// [-0.5,0.5] range --> 12 ulps
+		VECTORIZED_KERNEL_METHOD
+		void atanhFast(KernelData<Type,Simd> & result) const noexcept
+		{
+            alignas(64)
+            Type xSqr[Simd];
+
+            alignas(64)
+            Type resultData[Simd];
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	xSqr[i] =    data[i]*data[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =    Type(0.0666667);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =   resultData[i] * xSqr[i] +  Type(0.0769231);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =   resultData[i] * xSqr[i] +  Type(0.0909091);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =   resultData[i] * xSqr[i] +  Type(0.111111);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =   resultData[i] * xSqr[i] +  Type(0.142857);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				resultData[i] =   resultData[i] * xSqr[i] +  Type(0.2);
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				resultData[i] =   resultData[i] * xSqr[i] +  Type(0.333333);
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				resultData[i] =   resultData[i] * xSqr[i] +  Type(1.0);
+			}
+
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] =   resultData[i] * data[i];
+			}
+
+		}
+
+        // Chebyshev Polynomial coefficients found by genetic algorithm running on 768 GPU pipelines for 1 hour
+        VECTORIZED_KERNEL_METHOD
+        void expFastFullRange(KernelData<Type,Simd> & result) const noexcept
+        {
+
+        	// integer power
+            alignas(64)
+            Type resultData[Simd];
+
+            alignas(64)
+            Type scaledData[Simd];
+
+            constexpr Type scalingDown = Type(1.0/35.0);
+
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	scaledData[i] =    data[i]*scalingDown;
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =    Type(0.9999999822082630274167059)*scaledData[i] + Type(0.8185161762850601263608041);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =    resultData[i]*scaledData[i] + Type(-0.9999999710986964274184174);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =    resultData[i]*scaledData[i] + Type(-0.9999999864918285297221701);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =    resultData[i]*scaledData[i] + Type(0.2452281592191898340615808);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =    resultData[i]*scaledData[i] + Type(0.4370558371259694041555122);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =    resultData[i]*scaledData[i] + Type(-0.1317165581945598518132101);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =    resultData[i]*scaledData[i] + Type(0.005196983233269669710807648);
+            }
+
+            constexpr Type scalingUp = std::exp((Type)35);
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	result.data[i] =    resultData[i]*scalingUp;
+            }
+        }
+
         // only optimized for [-1,1] input range!!
         // Chebyshev Polynomial coefficients found by genetic algorithm running on 768 GPU pipelines for 1 hour
         VECTORIZED_KERNEL_METHOD
@@ -1888,8 +2120,10 @@ namespace Vectorization
 			const KernelDataFactory<SimdWidth> factory;
 
 
-#ifdef _OPENMP
-#include<omp.h>
+
+#if defined(_OPENMP)
+
+
 			// distribute to threads by openmp
 			#pragma omp parallel for num_threads(numThreads)
 			for(int i=0;i<nLoop;i++)
@@ -1898,6 +2132,7 @@ namespace Vectorization
 				id.idCompute(i*SimdWidth,[](const int prm){ return prm;});
 				kernel(factory, id, args...);
 			}
+
 #else
 			// simple work scheduling.
 			std::vector<std::thread> threads;
@@ -1923,7 +2158,6 @@ namespace Vectorization
 			{
 				threads[i].join(); // this is a synchronization point for the data changes
 			}
-
 #endif
 
 

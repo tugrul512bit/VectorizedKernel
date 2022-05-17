@@ -1230,10 +1230,13 @@ namespace Vectorization
                 Type inp = data[i];
                 // scaling + descaling for range [1,999]
                 Type scaling = (inp>Type(0.333))?Type(1.0f):Type(3.0f);
-                scaling = (inp>Type(0.108))?scaling:Type(1.0/0.103);
-                scaling = (inp>Type(0.029))?scaling:Type(1.0/0.029);
-                scaling = (inp>Type(0.007))?scaling:Type(1.0/0.007);
+                scaling = (inp>Type(0.111))?scaling:Type(1.0/0.111);
+                scaling = (inp>Type(0.035))?scaling:Type(1.0/0.035);
+                scaling = (inp>Type(0.011))?scaling:Type(1.0/0.011);
                 scaling = (inp>Type(0.003))?scaling:Type(1.0/0.003);
+                scaling = (inp>Type(0.001))?scaling:Type(1.0/0.001);
+                scaling = (inp>Type(0.0003))?scaling:Type(1.0/0.0003);
+                scaling = (inp>Type(0.0001))?scaling:Type(1.0/0.0001);
                 scaling1[i] = scaling;
             }
 
@@ -1245,10 +1248,13 @@ namespace Vectorization
                 Type inp = data[i];
                 // scaling + descaling for range [1,999]
                 Type scaling = (inp>Type(0.333))?Type(1.0f):Type(std::pow(3.0f,1.0/3.0));
-                scaling = (inp>Type(0.108))?scaling:Type(std::pow(1.0/0.103,1.0/3.0));
-                scaling = (inp>Type(0.029))?scaling:Type(std::pow(1.0/0.029,1.0/3.0));
-                scaling = (inp>Type(0.007))?scaling:Type(std::pow(1.0/0.007,1.0/3.0));
+                scaling = (inp>Type(0.111))?scaling:Type(std::pow(1.0/0.111,1.0/3.0));
+                scaling = (inp>Type(0.035))?scaling:Type(std::pow(1.0/0.035,1.0/3.0));
+                scaling = (inp>Type(0.011))?scaling:Type(std::pow(1.0/0.011,1.0/3.0));
                 scaling = (inp>Type(0.003))?scaling:Type(std::pow(1.0/0.003,1.0/3.0));
+                scaling = (inp>Type(0.001))?scaling:Type(std::pow(1.0/0.001,1.0/3.0));
+                scaling = (inp>Type(0.0003))?scaling:Type(std::pow(1.0/0.0003,1.0/3.0));
+                scaling = (inp>Type(0.0001))?scaling:Type(std::pow(1.0/0.0001,1.0/3.0));
                 scaling2[i] = scaling;
             }
 

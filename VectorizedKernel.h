@@ -1206,8 +1206,7 @@ namespace Vectorization
 		}
 
 
-		// [0.5,1] range --> 0.000008-0.000000005 error
-		// [0,0.5] ramge --> 0.33 - 0.000008 error
+		// [0,1] range --> 6e-5 average error
 		VECTORIZED_KERNEL_METHOD
 		void cubeRootFast(KernelData<Type,Simd> & result) const noexcept
 		{
@@ -1218,10 +1217,52 @@ namespace Vectorization
             Type resultData[Simd];
 
 
+            alignas(64)
+            Type scaling1[Simd];
+
+            alignas(64)
+            Type scaling2[Simd];
+
             VECTORIZED_KERNEL_LOOP
             for(int i=0;i<Simd;i++)
             {
-            	xd[i] =    data[i]-Type(1.0);
+
+                Type inp = data[i];
+                // scaling + descaling for range [1,999]
+                Type scaling = (inp>Type(0.333))?Type(1.0f):Type(3.0f);
+                scaling = (inp>Type(0.108))?scaling:Type(1.0/0.103);
+                scaling = (inp>Type(0.029))?scaling:Type(1.0/0.029);
+                scaling = (inp>Type(0.007))?scaling:Type(1.0/0.007);
+                scaling = (inp>Type(0.003))?scaling:Type(1.0/0.003);
+                scaling1[i] = scaling;
+            }
+
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+
+                Type inp = data[i];
+                // scaling + descaling for range [1,999]
+                Type scaling = (inp>Type(0.333))?Type(1.0f):Type(std::pow(3.0f,1.0/3.0));
+                scaling = (inp>Type(0.108))?scaling:Type(std::pow(1.0/0.103,1.0/3.0));
+                scaling = (inp>Type(0.029))?scaling:Type(std::pow(1.0/0.029,1.0/3.0));
+                scaling = (inp>Type(0.007))?scaling:Type(std::pow(1.0/0.007,1.0/3.0));
+                scaling = (inp>Type(0.003))?scaling:Type(std::pow(1.0/0.003,1.0/3.0));
+                scaling2[i] = scaling;
+            }
+
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	resultData[i] =    data[i]*scaling1[i];
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+            	xd[i] =    resultData[i]-Type(1.0);
             }
 
             VECTORIZED_KERNEL_LOOP
@@ -1287,10 +1328,14 @@ namespace Vectorization
             VECTORIZED_KERNEL_LOOP
 			for(int i=0;i<Simd;i++)
 			{
-				result.data[i] =   resultData[i] * xd[i] +  Type(1.0);
+				resultData[i] =   resultData[i] * xd[i] +  Type(1.0);
 			}
 
-
+            VECTORIZED_KERNEL_LOOP
+			for(int i=0;i<Simd;i++)
+			{
+				result.data[i] =   resultData[i]/scaling2[i];
+			}
 		}
 
 		// [-0.5,0.5] range --> 12 ulps

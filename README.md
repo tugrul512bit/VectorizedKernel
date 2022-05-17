@@ -38,9 +38,11 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 - x.sinFastFullRange(result) ---> too high ulps, error at digit 0.0000001 so watchout for outputs that are close to zero
 - x.sinFast(result) ---> 0.19 ulps average distance from std::sin, 1 ulps max distance
 - x.cosFast(result) --> 0.08 ulps average, 1 ulps max distance from std::cos
-- x.sqrt(result)
+- x.sqrt(result) --> auto-vectorized
 - x.rsqrt(result) --> still uses sqrt instruction, not rsqrt
 - x.expFast(result) --> 0.5 ULPS average, 10 ulps max
+- x.atanhFast(result) --> 12 ULPS on range [-0.5,0.5], higher error on (-1.0,1.0)
+- x.cubeRootFast(result) --> for range [0,1] where 0 has 0.33 error, 0.5 has 0.000008 error, 1.0 has 0.000000005 error (better range-reduce to upper half)
 - todo: x.log(result), x.pow(y,result), x.divFast(non-constant-integer division,result), x.rsqrtFast(result)
 
 ### Basic Functions Accelerated?

@@ -42,6 +42,7 @@ Basic samples are found in wiki: https://github.com/tugrul512bit/VectorizedKerne
 - x.rsqrt(result) --> still uses sqrt instruction, not rsqrt
 - x.expFast(result) --> 0.5 ULPS average, 10 ulps max
 - x.atanhFast(result) --> 12 ULPS on range [-0.5,0.5], higher error on (-1.0,1.0)
+- x.template cubeRootNewtonRaphson<int inverseTolerance>(result) --> faster in range [0,1] (requires range reduction/dereduction), still faster outside that range
 - x.cubeRootFast(result) --> for range [0,1] where 0 has 0.33 error, 0.5 has 0.000008 error, 1.0 has 0.000000005 error (better range-reduce to upper half)
 - todo: x.log(result), x.pow(y,result), x.divFast(non-constant-integer division,result), x.rsqrtFast(result)
 

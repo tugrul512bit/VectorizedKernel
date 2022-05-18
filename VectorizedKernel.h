@@ -1205,6 +1205,120 @@ namespace Vectorization
 			}
 		}
 
+		// 4x faster (AVX512) than std::pow for normalized range [0,1]
+		// still faster with higher range but gets slower
+		// tolerance = 1.0/inverseTolerance
+
+		template<int inverseTolerance=1000>
+		VECTORIZED_KERNEL_METHOD
+		void cubeRootNewtonRaphson(KernelData<Type,Simd> & result) const noexcept
+		{
+		    // f_err(x) = x*x*x - N
+		    // f'_err(x) = 3*x*x
+		    // x = x - (x*x*x - N)/(3*x*x)
+		    // x = x - (x - N/(x*x))/3
+
+            alignas(64)
+            Type xd[Simd];
+
+            alignas(64)
+            Type resultData[Simd];
+
+
+            alignas(64)
+            Type xSqr[Simd];
+
+            alignas(64)
+            Type nDivXsqr[Simd];
+
+            alignas(64)
+            Type diff[Simd];
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                xd[i]=data[i]<=Type(0.000001);
+            }
+
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                resultData[i]=xd[i]?Type(1.0):data[i];
+            }
+            // Newton-Raphson Iterations in parallel
+            bool work = true;
+            while(work)
+            {
+            	VECTORIZED_KERNEL_LOOP
+                for(int i=0;i<Simd;i++)
+                {
+                    xSqr[i]=resultData[i]*resultData[i];
+                }
+
+            	VECTORIZED_KERNEL_LOOP
+                for(int i=0;i<Simd;i++)
+                {
+                    nDivXsqr[i]=data[i]/xSqr[i];
+                }
+
+            	VECTORIZED_KERNEL_LOOP
+                for(int i=0;i<Simd;i++)
+                {
+                    nDivXsqr[i]=resultData[i]-nDivXsqr[i];
+                }
+
+            	VECTORIZED_KERNEL_LOOP
+                for(int i=0;i<Simd;i++)
+                {
+                    nDivXsqr[i]=nDivXsqr[i]/Type(3.0);
+                }
+
+            	VECTORIZED_KERNEL_LOOP
+                for(int i=0;i<Simd;i++)
+                {
+                    diff[i]=resultData[i]-nDivXsqr[i];
+                }
+
+            	VECTORIZED_KERNEL_LOOP
+                for(int i=0;i<Simd;i++)
+                {
+                    diff[i]=resultData[i]-diff[i];
+                }
+
+            	VECTORIZED_KERNEL_LOOP
+                for(int i=0;i<Simd;i++)
+                {
+                    diff[i]=std::abs(diff[i]);
+                }
+
+            	VECTORIZED_KERNEL_LOOP
+                for(int i=0;i<Simd;i++)
+                {
+                    diff[i]=diff[i]>Type(1.0/inverseTolerance);
+                }
+
+
+                Type check = Type(0);
+                VECTORIZED_KERNEL_LOOP
+                for(int i=0;i<Simd;i++)
+                {
+                   check += diff[i];
+                }
+                work = (check>Type(0.0));
+
+                VECTORIZED_KERNEL_LOOP
+                for(int i=0;i<Simd;i++)
+                {
+                    resultData[i]=resultData[i]-nDivXsqr[i];
+                }
+            }
+            VECTORIZED_KERNEL_LOOP
+            for(int i=0;i<Simd;i++)
+            {
+                result.data[i]=xd[i]?Type(0.0):resultData[i];
+            }
+
+		}
 
 		// [0,1] range --> 6e-5 average error
 		VECTORIZED_KERNEL_METHOD

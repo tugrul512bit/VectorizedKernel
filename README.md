@@ -123,8 +123,8 @@ Mandelbrot generation sample that has more than 10x speedup (compared to scalar 
 
 - Godbolt.org AVX512 server single thread (simd=64): 11 cycles per pixel (-std=c++2a -O3 -march=cascadelake -mavx512f -mavx512bw -mprefer-vector-width=512  -ftree-vectorize -fno-math-errno) (less than 5 ms per 1000x1000 image)
 	
-- Ryzen 9 7900  AVX512 single thread (simd=64): 7.3 cycles per pixel (-std=c++2a -O3 -march=native -mavx512f -mprefer-vector-width=512  -ftree-vectorize -fno-math-errno)
-- Ryzen 9 7900  AVX512 24 threads (simd=64): 0.7 cycles per pixel
+- Ryzen 9 7900  AVX512 single thread (simd=64): 6.4 cycles per pixel (-std=c++2a -O3 -march=native -mavx512f -mprefer-vector-width=512  -ftree-vectorize -fno-math-errno)
+- Ryzen 9 7900  AVX512 24 threads (simd=64): 0.56 cycles per pixel
 
 ```C++
 #include <algorithm>
